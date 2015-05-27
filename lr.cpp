@@ -18,21 +18,6 @@ vector<string> LR::splitline(string &line)
      vector<string> tmp_vec;
     size_t beg = 0, end = 0;
     string split_tag = "\t";
-/*
-    char *token = strtok((char*)line.c_str(),"\t");
-    string str(token);
-    tmp_vec.push_back(str);
-    while(token != NULL)
-    {
-        token = strtok(NULL,"\t");
-        cout<<token<<endl;
-        string s;
-        if(token != NULL)
-        {
-            string s(token);
-            tmp_vec.push_back(s);
-	}
-    }*/
     while((end = line.find_first_of(split_tag,beg)) != string::npos)
     {
         if(end > beg)
@@ -49,7 +34,7 @@ vector<string> LR::splitline(string &line)
     }
     return tmp_vec;
 }
-int LR::get_feature_num(string sample_filename)
+int LR::get_feature_num(string sample_filename, vector<int>& label, vec_vec& feature_matrix)
 {
     cout<<"Calculate feature number......"<<endl;
     ifstream fin(sample_filename.c_str());
@@ -58,27 +43,43 @@ int LR::get_feature_num(string sample_filename)
     string line, splittag = ":";
     int max_index = 0;
     vector<string> feature_index;
+    sparse_feature sf;
+    vec key_val;
     while(getline(fin,line))
     {
+        key_val.clear();
         feature_index.clear();
         feature_index = splitline(line);
-        for(int i = 0; i < feature_index.size(); i++)
+        int y = atoi(feature_index[0].c_str());
+        label.push_back(y);
+        for(int i = 1; i < feature_index.size(); i++)
         {  
             int index = 0, beg = 0, end = 0;
-            /*while((end = feature_index[i].find_first_of(":",beg)) != string::npos)
+            while((end = feature_index[i].find_first_of(":",beg)) != string::npos)
             {
                 if(end > beg)
                 {
                    string indexstr = feature_index[i].substr(beg,end-beg);
-                   index = atoi(indexstr.c_str());
+                    index = atoi(indexstr.c_str());
+                    if (index > max_index)
+                        max_index = index;
+               //     cout<<index<<" ";
+                   sf.id_index = index - 1;
                 }
-                break;
-                //beg += 1;
-            }*/
-            index = atoi(feature_index[i].c_str());
-	    if (index > max_index)
-                max_index = index;
+                beg += 1;
+            }
+            if(beg < feature_index[i].size())
+            {
+                string indexend = feature_index[i].substr(beg);
+                int value = atoi(indexend.c_str());
+                sf.id_val = value;
+            }
+            key_val.push_back(sf);
+	    //if (index > max_index)
+              //  max_index = index;
         }
+        feature_matrix.push_back(key_val);
+
     }
     fin.close();
     cout<<"maxindex = "<<max_index<<endl;
@@ -93,63 +94,39 @@ void LR::init_theta(vector<float>& theta, int feature_size)
     for(size_t i = 0; i < feature_size; i++)
 	theta.push_back(init_theta);
 }
-void LR::train(string filename,vector<float>& theta)
+void LR::train(string filename,vector<float>& theta, vector<int>& label,vector<vector<sparse_feature> >& feature_matrix)
 {
-    size_t i = 0;
+    size_t step = 0;
     string sample_line;
     vector<float> delta_theta(theta.size(),0.0);
     vector<string> sample;
     vector<int> index;
     cout<<"traing start......"<<endl;
-    while(i < 1)
+    while(step < 1)
     {
         ifstream fin(filename.c_str());
-        int j = 0;
-        while(getline(fin,sample_line))
-	{
-            if(j % 10000 == 0)
-                cout<<j<<endl;
-            j++;
-            sample.clear();
-            index.clear();
-            delta_theta.clear();
-            float x = 0.0, y = 0.0, k = 0.0;
-            sample = splitline(sample_line);
-            //-------------------------------------------
-            int label = atoi(sample[0].c_str());
-	    for(int i = 1; i < sample.size(); i++)
-	    {
-		    int index_int = 0, beg = 0, end = 0;
-		    while((end = sample[i].find_first_of(":",beg)) != string::npos)
-		    {
-			    if(end > beg)
-			    {
-				    string indexstr = sample[i].substr(beg,end-beg);
-				    index_int = atoi(indexstr.c_str());
-			    }
-                            beg +=1;
-	            }
-                    string index_end = sample[i].substr(beg);
-/*
-                    char *token = strtok((char*)sample[i].c_str(),":");
-                    index_int = atoi(token);
-                    token = strtok(NULL,":");
-                    int val = atoi(token);*/
-                    int val = atoi(index_end.c_str());
-                    x += theta[index_int-1]*val;
-                    index.push_back(index_int - 1);
-	    }
-	    y = sigmoid(x);
-	    for(size_t j = 0; j < index.size(); j++)
-	    {
-		    delta_theta[index[j]] = y-label;
-	    }
-	    for(size_t j = 0; j < theta.size(); j++)
+        int count = 0;
+	    for(size_t i = 0; i < feature_matrix.size(); i++)
+            {
+                if(count % 10000 == 0)cout<<count<<endl;
+                float val,x = 0.0, y = 0.0;
+                for(size_t j = 0; j < feature_matrix[i].size(); j++)
+                {
+  		    int index = feature_matrix[i][j].id_index;
+                    float val = feature_matrix[i][j].id_val; 
+                    x += theta[index]*val;
+                }
+	        y = sigmoid(x);
+	        for(size_t j = 0; j < feature_matrix[i].size(); j++)
+	        {
+                    delta_theta[feature_matrix[i][j].id_index] = y-label[i];
+	        }
+	        for(size_t j = 0; j < theta.size(); j++)
 		    theta[j] -= 0.1*delta_theta[j];
-
-	}
-	i++;
-        cout<<"epoch "<<i<<endl;
+                count++;
+             }
+	step++;
+        cout<<"step "<<step<<endl;
 	fin.close();
     }
 }
@@ -192,7 +169,7 @@ void LR::predict(string trainfile, vector<float>& theta)
         }
         for(size_t j = 0; j < preindex.size(); j++)
         {
-            cout<<preindex[j]<<":"<<preval[j]<<endl;
+            //cout<<preindex[j]<<":"<<preval[j]<<endl;
             x += theta[preindex[j]]*preval[j];
         }
         float y = sigmoid(x);
@@ -213,11 +190,17 @@ int main(int argc,char* argv[])
     string train_file = "train_feature";
     string predict_file = "predict_file";
     train_file = argv[1];
-    feature_num = lr.get_feature_num(train_file);
+    feature_num = lr.get_feature_num(train_file, lr.label,lr.feature_matrix);
+    /*for(size_t i = 0; i < lr.feature_matrix.size(); i++)
+    {
+        for(size_t j = 0; j < lr.feature_matrix[i].size(); j++)
+            cout<<lr.feature_matrix[i][j].id_index<<":"<<lr.feature_matrix[i][j].id_val<<" ";
+        cout<<endl;
+    }*/
     lr.init_theta(lr.theta,feature_num);
-    lr.train(train_file,lr.theta);
+    lr.train(train_file,lr.theta, lr.label, lr.feature_matrix);
+    lr.label.clear();
+    lr.feature_matrix.clear();
     lr.predict(predict_file, lr.theta);
-    //for(size_t i = 0; i < lr.theta.size(); i++)
-       // cout<<lr.theta[i]<<endl; 
     return 0;
 }

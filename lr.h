@@ -8,22 +8,25 @@
 using namespace std;
 
 struct sparse_feature{
-	vector<int> feature_id_vec;
- 	vector<float> feature_value_vec;  
+	int id_index;
+ 	float id_val;  
 };
+typedef vector<sparse_feature> vec; 
+typedef vector<vector<sparse_feature> > vec_vec;
 class LR{
     public:
 	LR();
   	~LR();
   	vector<float> theta;
-	vector<sparse_feature> sample_feature_vec;
+	vec sample_feature_vec;
+        vec_vec feature_matrix;
         vector<int> label;
 	void load_one_sample(string sample_file);  
         float sigmoid(float x);
         vector<string> splitline(string &line); 
 	void init_theta(vector<float>& theta,int feature_size);
-        int get_feature_num(string sample_file);
-        void train(string filename,vector<float>& theta);
+        int get_feature_num(string sample_file, vector<int>& label,vec_vec& feature_matrix);
+        void train(string filename,vector<float>& theta, vector<int>& label, vec_vec& feature_matrix);
         void predict(string filename, vector<float>& theta);
     private:
 	      
