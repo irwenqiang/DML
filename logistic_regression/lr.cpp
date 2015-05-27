@@ -1,25 +1,20 @@
 #include "mpi.h"
-#include "lr.h"
 #include "opt_algo.h"
 #include <string.h>
 #include <stdlib.h>
 #include <time.h>
 #include <iomanip>
 
-LR::LR()
-{}
-LR::~LR()
-{}
-
-OPT_ALGO::OPT_ALGO(){}
-OPT_ALGO::~OPT_ALGO(){}
-float LR::sigmoid(float x)
-{
-    double sgm = 1/(1+exp(-(double)x));
-    return (float)sgm;
+//OPT_ALGO opt;
+OPT_ALGO::OPT_ALGO(){
+    
 }
+OPT_ALGO::~OPT_ALGO(){
+    
+}
+OPT_ALGO opt;
 
-vector<string> LR::splitline(string &line)
+vector<string> splitline(string &line)
 {
     vector<string> tmp_vec;
     size_t beg = 0, end = 0;
@@ -40,20 +35,17 @@ vector<string> LR::splitline(string &line)
     }
     return tmp_vec;
 }
-void LR::mk_feature(string train_file, 
-                   vector<int>& label, 
-                   vec_vec& feature_matrix,
-                   int myid,
-                   int numprocs){
+int mk_feature(string train_file, vector<vector<sparse_feature> >& feature_matrix, \
+              vector<int>& label, int myid, int numprocs){
     cout<<"make feature start......"<<endl;
     ifstream fin(train_file.c_str());
     if(!fin)cerr<<"open error get feature number..."<<train_file<<endl;
-    
     string line, splittag = ":";
     int max_index = 0;
     vector<string> feature_index;
     sparse_feature sf;
-    vec key_val;
+    vector<sparse_feature> key_val;
+    
     int i = 0;
     while(getline(fin,line)){
         i++;
@@ -71,7 +63,7 @@ void LR::mk_feature(string train_file,
                     index = atoi(indexstr.c_str());
                     if (index > max_index)
                         max_index = index;
-                   sf.id_index = index - 1;
+                   sf.idx = index - 1;
                    
                 }
                 //beg += 1; //this code must remain,it makes me crazy two days!!!
@@ -80,29 +72,27 @@ void LR::mk_feature(string train_file,
             if(beg < feature_index[i].size()){
                 string indexend = feature_index[i].substr(beg);
                 int value = atoi(indexend.c_str());
-                sf.id_val = value;
+                sf.val = value;
             }
             key_val.push_back(sf);
         }
         feature_matrix.push_back(key_val);
     }
     fin.close();
+    return max_index;
     //cout<<"maxindex = "<<max_index<<endl;
 }
 void load_one_sample(string sample_filename)
 {}
 
-void LR::init_theta(vector<float>& theta, vector<float> &delta_theta,int feature_size)
-{
-    float init_theta = 0.0;
-    //cout<<feature_size<<endl;
-    for(size_t i = 0; i < feature_size; i++){
-	    theta.push_back(init_theta);
-        delta_theta.push_back(init_theta);
+void init_w(int size, vector<float>& w){
+    float init_w = 0.0;
+    for(size_t j = 0; j < size; j++){
+	    w.push_back(init_w);
     }
 }
 
-void LR::savemodel(vector<float> &theta,int myid){
+void savemodel(vector<float> &theta,int myid){
     ofstream fout("train.model");
     fout.setf(ios::fixed,ios::floatfield);
     fout.precision(7);
@@ -113,8 +103,7 @@ void LR::savemodel(vector<float> &theta,int myid){
     fout.close();
 }
 
-void LR::predict(string test_file, vector<float>& theta, int myid)
-{
+void predict(string test_file, vector<float>& theta, int myid){
 	cout<<"predic start-----------------------------------"<<endl;
 	ifstream fin(test_file.c_str());
 	string test_line;
@@ -152,7 +141,7 @@ void LR::predict(string test_file, vector<float>& theta, int myid)
         {
             x += theta[preindex[j]]*preval[j];
         }
-        float y = sigmoid(x);
+        float y = opt.sigmoid(x);
         predict_result.push_back(y);
     }
     for(size_t j = 0; j < predict_result.size(); j++)
@@ -162,36 +151,24 @@ void LR::predict(string test_file, vector<float>& theta, int myid)
     }
 }
 
-int main(int argc,char* argv[])
-{  
+int main(int argc,char* argv[]){  
     int myid, numprocs;
     MPI_Status status;
     MPI_Init(&argc,&argv);
     MPI_Comm_rank(MPI_COMM_WORLD,&myid);
     MPI_Comm_size(MPI_COMM_WORLD,&numprocs);
     
-    LR lr;
-    OPT_ALGO opt;
     string train_file = "traindata.txt";
     string test_file = "testdata.txt";
-    lr.mk_feature(train_file, 
-                  lr.label,
-                  lr.feature_matrix,
-                  myid,
-                  numprocs);
-    int feature_num = lr.feature_matrix.size();
-    lr.init_theta(lr.theta,
-                  lr.delta_theta,
-                  feature_num);
-    opt.sgd(train_file,
-             lr.theta, 
-             lr.delta_theta,
-             lr.label, 
-             lr.feature_matrix,
-             myid,
-             numprocs);
-    lr.savemodel(lr.theta, myid);
-    lr.predict(test_file, lr.theta, myid);
+
+    mk_feature(train_file, opt.feature_matrix, opt.label, myid, numprocs);
+    int feature_num = opt.feature_matrix.size();
+    //MPI_Allreduce(&feature_num,);
+    init_w(feature_num, opt.w);
+    //opt.sgd(opt.w, myid, numprocs);
+    opt.owlqn(opt.w, myid, numprocs);
+    //opt.savemodel(opt.theta, myid);
+    //opt.predict(test_file, opt.theta, myid);
     int ret_code = MPI_Finalize();
     fprintf(stderr,"%i,%i\n",myid, ret_code);
   return 0;
