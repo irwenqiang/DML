@@ -1,6 +1,6 @@
 lr:lr.o
-	g++ -g -o lr lr.o
+	mpicxx  -fopenmp -g -O3 -o lr lr.o
 lr.o:lr.cpp lr.h
-	g++ -g -c lr.cpp
+	mpicxx -fopenmp -g -O3 -c lr.cpp
 clean:
 	rm -f *~ lr lr.o

@@ -18,15 +18,17 @@ class LR{
 	LR();
   	~LR();
   	vector<float> theta;
+        vector<float> delta_theta;
 	vec sample_feature_vec;
         vec_vec feature_matrix;
         vector<int> label;
 	void load_one_sample(string sample_file);  
         float sigmoid(float x);
         vector<string> splitline(string &line); 
-	void init_theta(vector<float>& theta,int feature_size);
-        int get_feature_num(string sample_file, vector<int>& label,vec_vec& feature_matrix);
-        void train(string filename,vector<float>& theta, vector<int>& label, vec_vec& feature_matrix);
+	void init_theta(vector<float>& theta, vector<float>& delta_theta,int feature_size);
+        int get_feature_num(string sample_file, vector<int>& label,vec_vec& feature_matrix,int myid,int numprocs);
+        void train(string filename,vector<float>& theta, vector<float> &delta_theta,vector<int>& label, vec_vec& feature_matrix,int myid,int numprocs);
+        void savemodel(vector<float> &theta, int myid);
         void predict(string filename, vector<float>& theta);
     private:
 	      
