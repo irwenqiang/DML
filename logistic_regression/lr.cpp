@@ -7,10 +7,8 @@
 
 //OPT_ALGO opt;
 OPT_ALGO::OPT_ALGO(){
-    
 }
 OPT_ALGO::~OPT_ALGO(){
-    
 }
 OPT_ALGO opt;
 
