@@ -32,5 +32,4 @@ class LR{
         void savemodel(vector<float> &theta, int myid);
         void predict(string filename, vector<float>& theta);
     private:
-	      
 };
