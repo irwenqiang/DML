@@ -6,7 +6,6 @@
 #include <iostream>
 #include <string.h>
 using namespace std;
-
 struct sparse_feature{
 	int id_index;
  	float id_val;  
