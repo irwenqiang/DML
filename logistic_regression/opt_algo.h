@@ -1,3 +1,4 @@
+#include "mpi.h"
 #include <string>
 #include <fstream>
 #include <vector>
@@ -6,6 +7,8 @@
 #include <iostream>
 #include <string.h>
 #include <deque>
+#include <pthread.h>
+#include </opt/OpenBLAS/include/cblas.h>
 using namespace std;
 
 struct sparse_feature{
@@ -24,7 +27,7 @@ public:
     float sigmoid(float x);
     void sgd(vector<float> &w, int myid, int numprocs);
 
-    void owlqn(vector<float> w, int myid, int numprocs);
+    void owlqn(vector<float> &w, int myid, int numprocs);
     float fun(vector<float>& w);
     void grad(vector<float>& w, vector<float>& g);
     void sub_gradient(vector<float>& w, vector<float>& g, vector<float>& sub_g);

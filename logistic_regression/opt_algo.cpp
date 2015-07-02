@@ -1,5 +1,5 @@
-#include <pthread.h>
 #include "opt_algo.h"
+
 using namespace std;
 
 float OPT_ALGO::sigmoid(float x)
@@ -98,8 +98,8 @@ void OPT_ALGO::two_loop(vector<float>& sub_g){
     //ro = 1/ ro;
     vector<float> q = sub_g;
     for(int loop = m; loop >= 0; loop--){
-        float rolist[loop] = dotProduct(ylist[loop], slist[loop]);
-        alpha[loop] = dotProduct(slist[loop], q)/rolist[loop];
+        double rolist[loop] = cblas_ddot(sub_g.size(), &ylist[loop], 1, &slist[loop], 1);
+        alpha[loop] = cblas_ddot(sub_g.size(), slist[loop], 1, q, 1)/rolist[loop];
         addMult(q, ylist[loop], -alpha[loop]);
     }
     vector<float> lasty = ylist[m-1];
@@ -152,17 +152,17 @@ void OPT_ALGO::parallel_owlqn(float f, vector<float>& w, vector<float>& g){//inn
         two_loop(slist, ylist, rolist, sub_g);
     }
     fixdir(sub_g, g);
-    old_f = f;
-    linesearch(old_f, w, sub_g, g, nextw);
+    double old_f = f;
+    linesearch(old_f, w, sub_g, g, next_w);
     //pthread_mutex_unlock(&mutex);
     //update slist
     ccopy_(w.size(), nextw, 1, -w, 1);
-    slist.push_back(nextw);
+    slist.push_back(next_w);
     //update ylist
     vector<float> next_g;
-    grad_func(nextw, next_g);
-    ccopy_(w.size(), nextg, 1, -g, 1);
-    ylist.push_back(next_g)
+    grad(next_w, next_g);
+    ccopy_(w.size(), next_g, 1, -g, 1);
+    ylist.push_back(next_g);
     //update rolist
     ro = dot_(next_g, next_w);
     rolist.push_back(ro);
