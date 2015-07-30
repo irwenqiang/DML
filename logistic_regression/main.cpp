@@ -15,9 +15,7 @@ int main(int argc,char* argv[]){
     
     string train_file = "traindata.txt";
     string test_file = "testdata.txt";
-    OPT_ALGO opt;
-    Utils utils;
-    utils.mk_feature(train_file, opt.feature_matrix, opt.label, myid, numprocs);
+    Utils::mk_feature(train_file, OPT_ALGO::feature_matrix, OPT_ALGO::label, myid, numprocs);
     int feature_num = opt.feature_matrix.size();
     //MPI_Allreduce(&feature_num,);
     init_w(feature_num, opt.w);
