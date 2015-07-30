@@ -1,5 +1,14 @@
-class File_proc{
-    vector<string> splitline(string&);
-    int mk_feature(string, vector<vector<sparse_feature> >&, \
-                   vector<int>&, string)
+#include <vector>
+#include <string>
+
+struct sparse_feature{
+    int idx;
+    double val;
+};
+class Utils{
+    std::vector<std::string> splitline(std::string&);
+    int mk_feature(std::string file_name,  std::string)
+    private:
+        std::vector<std::vector<sparse_feature> > feature_matrix;
+        std::vector<double> label;
 };

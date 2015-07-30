@@ -11,10 +11,6 @@
 #include </opt/OpenBLAS/include/cblas.h>
 using namespace std;
 
-struct sparse_feature{
-    int idx;
-    float val;  
-};
 class OPT_ALGO{
 public:
     OPT_ALGO();
