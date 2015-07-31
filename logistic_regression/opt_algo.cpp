@@ -1,13 +1,11 @@
 #include "opt_algo.h"
 
-using namespace std;
-
 float OPT_ALGO::sigmoid(float x)
 {
     double sgm = 1/(1+exp(-(double)x));
     return (float)sgm;
 }
-
+/*
 void OPT_ALGO::sgd(vector<float>& w, int myid, int numprocs){
     size_t step = 0;
     string sample_line;
@@ -37,7 +35,10 @@ void OPT_ALGO::sgd(vector<float>& w, int myid, int numprocs){
         step++;
     }
 }
+*/
+
 //----------------------------owlqn--------------------------------------------
+/*
 float OPT_ALGO::fun(vector<float>& w){
     float f = 0.0;
     for(int i = 0; i < feature_matrix.size(); i++){
@@ -141,7 +142,8 @@ void OPT_ALGO::linesearch(float old_f, vector<float>& w,
         }
     }
 }
-    
+*/  
+/*
 void OPT_ALGO::parallel_owlqn(float f, vector<float>& w, vector<float>& g){//inner thread, write g~ to g, mutex!
     //pthread_mutex_lock(&mutex);
     vector<float> next_w;
@@ -170,25 +172,25 @@ void OPT_ALGO::parallel_owlqn(float f, vector<float>& w, vector<float>& g){//inn
         slist.pop_front();
         ylist.pop_front();
     }
-}
-void OPT_ALGO::owlqn(vector<float>& w, int myid, int numprocs){
+}*/
+
+void OPT_ALGO::owlqn(int myid, int numprocs){
     int step = 0;
-    dim = w.size();
-    string line;
-    vector<int> index;
-    cout<<"training by owlqn start "<<endl;
-    vector<float> sub_g(dim);
-    vector<float> g(dim);
-    vector<float> y_score(dim);
-    vector<float> pr_func;
-    float oldval = 0.0;
+    std::string line;
+    std::vector<int> index;
+    std::cout<<"training by owlqn start "<<std::endl;
+    //vector<float> sub_g(dim);
+    //vector<float> g(dim);
+    //vector<float> y_score(dim);
+    //vector<float> pr_func;
+    /*float oldval = 0.0;
     MPI_Allreduce(&w);
     f = fun(w);
     MPI_Allreduce(&w);
-    grad(w, g);//
-    while(step < 2){
-        parallel_owlqn(f, w, g);        
-    }
+    grad(w, g);*/
+    //while(step < 2){
+    //    parallel_owlqn(f, w, g);        
+    //}
 }
 
 

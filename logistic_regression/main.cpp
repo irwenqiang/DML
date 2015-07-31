@@ -1,6 +1,6 @@
 #include "mpi.h"
-#include "opt_algo.h"
-#include "utils.h"
+//#include "opt_algo.h"
+//#include "utils.h"
 #include <string.h>
 #include <stdlib.h>
 #include <time.h>
@@ -13,9 +13,9 @@ int main(int argc,char* argv[]){
     MPI_Comm_rank(MPI_COMM_WORLD,&myid);
     MPI_Comm_size(MPI_COMM_WORLD,&numprocs);
     
-    string train_file = "traindata.txt";
-    string test_file = "testdata.txt";
-    Utils::mk_feature(train_file, OPT_ALGO::feature_matrix, OPT_ALGO::label, myid, numprocs);
+    std::string train_file = "traindata.txt";
+    std::string test_file = "testdata.txt";
+    /*Utils::mk_feature(train_file, OPT_ALGO::feature_matrix, OPT_ALGO::label, myid, numprocs);
     int feature_num = opt.feature_matrix.size();
     //MPI_Allreduce(&feature_num,);
     init_w(feature_num, opt.w);
@@ -24,6 +24,6 @@ int main(int argc,char* argv[]){
     //opt.savemodel(opt.theta, myid);
     //opt.predict(test_file, opt.theta, myid);
     int ret_code = MPI_Finalize();
-    fprintf(stderr,"%i,%i\n",myid, ret_code);
-  return 0;
+    fprintf(stderr,"%i,%i\n",myid, ret_code);*/
+    return 0;
 }

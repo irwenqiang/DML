@@ -1,6 +1,6 @@
-#include <utils.h>
+#include "utils.h"
 
-vector<string> Utils::splitline(string &line，string split_tag){
+/*vector<string> Utils::splitline(string &line，string split_tag){
     vector<string> tmp_vec;
     size_t start = 0, end = 0;
     while((end = line.find_first_of(split_tag, start)) != string::npos){
@@ -120,3 +120,4 @@ void predict(string test_file, vector<float>& theta, int myid){
         cout<<predict_result[j]<<endl;
     }
 }
+*/
