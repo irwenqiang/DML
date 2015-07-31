@@ -1,3 +1,6 @@
+#ifndef UTILS_H_
+#define UTILS_H_
+
 #include <vector>
 #include <string>
 #include <stdlib.h>
@@ -31,3 +34,4 @@ private:
     std::vector<sparse_feature> key_val;                                     
     sparse_feature sf;
 };
+#endif

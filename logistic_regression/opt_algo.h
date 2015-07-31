@@ -7,8 +7,7 @@
 #include <string.h>
 #include <deque>
 #include <pthread.h>
-//#include "utils.h"
-//#include </opt/OpenBLAS/include/cblas.h>
+#include "utils.h"
 
 class OPT_ALGO{
 public:
@@ -19,8 +18,8 @@ public:
     //void load_one_sample(string sample_file);  
     float sigmoid(float x);
     //void sgd(int myid, int numprocs);
-    void owlqn(int myid, int numprocs);
-   
+
+    void owlqn(std::vector<double>* w, std::vector<std::vector<sparse_feature> >* fea_matrix, int myid, int num_procs);
     //float fun(vector<float>& w);
     //void grad(vector<float>& w, vector<float>& g);
     //void sub_gradient(vector<float>& w, vector<float>& g, vector<float>& sub_g);

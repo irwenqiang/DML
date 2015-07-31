@@ -1,4 +1,5 @@
 #include "opt_algo.h"
+#include "utils.h"
 
 
 OPT_ALGO::OPT_ALGO()
@@ -183,9 +184,10 @@ void OPT_ALGO::parallel_owlqn(float f, vector<float>& w, vector<float>& g){//inn
     }
 }*/
 
-void OPT_ALGO::owlqn(int myid, int numprocs){
+void OPT_ALGO::owlqn(std::vector<double>* w, std::vector<std::vector<sparse_feature> >* fea_matrix, int myid, int num_procs){
     int step = 0;
     std::string line;
+    std::cout<<(*w).size()<<"------"<<myid<<std::endl;
     std::vector<int> index;
     std::cout<<"training by owlqn start "<<std::endl;
     //vector<float> sub_g(dim);

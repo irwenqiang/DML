@@ -1,13 +1,29 @@
 #include "mpi.h"
-//#include "opt_algo.h"
 #include <string.h>
 #include <stdlib.h>
 #include <time.h>
 #include <iomanip>
 #include <pthread.h>
-//#include "utils.h"
 #include "utils.cpp"
 #include "opt_algo.cpp"
+
+
+Utils u;
+OPT_ALGO opt;
+
+struct ThreadParam{
+        std::vector<double>* w;
+        std::vector<std::vector<sparse_feature> >* fea_matrix;
+        int proc_id;
+        int n_proc;
+};
+
+void *opt_algo(void *arg){
+    ThreadParam* args = (ThreadParam*) arg;
+    std::cout<<args->proc_id<<std::endl;
+    opt.owlqn(args->w, args->fea_matrix, args->proc_id, args->n_proc);
+
+}
 
 int main(int argc,char* argv[]){  
     int myid, numprocs;
@@ -15,8 +31,6 @@ int main(int argc,char* argv[]){
     MPI_Init(&argc,&argv);
     MPI_Comm_rank(MPI_COMM_WORLD,&myid);
     MPI_Comm_size(MPI_COMM_WORLD,&numprocs);
-    Utils u;
-    OPT_ALGO opt;
     u.train_file = "./data/traindata.txt";
     u.test_file = "./data/testdata.txt";
     u.split_tag = '\t';
@@ -26,9 +40,18 @@ int main(int argc,char* argv[]){
     MPI_Bcast(&fea_dim, 1, MPI_INT, 0, MPI_COMM_WORLD);
     if(myid != 0) std::cout<<myid<<":"<<fea_dim<<std::endl;
     u.init_w();
-    /*
     //opt.sgd(opt.w, myid, numprocs);
-    opt.owlqn(opt.w, myid, numprocs);
+    int n_threads = 3;
+    std::vector<ThreadParam> params;
+    for(int i = 0; i < n_threads; i++){
+        ThreadParam param = {&u.w, &u.feature_matrix, myid, numprocs};
+        params.push_back(param);
+    } 
+    for(int i = 0; i < params.size(); i++){
+        pthread_t thread;
+        int ret = pthread_create(&thread, NULL, &opt_algo, (void*)&(params[i])); 
+    }
+    /*
     //opt.savemodel(opt.theta, myid);
     //opt.predict(test_file, opt.theta, myid);
     int ret_code = MPI_Finalize();
