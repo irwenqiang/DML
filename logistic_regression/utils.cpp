@@ -2,6 +2,14 @@
 #include <fstream>
 #include "utils.h"
 
+Utils::Utils()
+{
+}
+
+Utils::~Utils()
+{
+}
+
 std::vector<std::string> Utils::split_line(){
     std::vector<std::string> tmp_vec;
     size_t start = 0, end = 0;
@@ -51,17 +59,20 @@ void Utils::mk_feature(std::string file_name, std::string split_tag){
     }
     fin.close();
 }
-/*
-void load_one_sample(string sample_filename)
-{}
+  
+void Utils::get_fea_dim(){
+    fea_dim = feature_matrix.size();
+}
+//void load_one_sample(string sample_filename)
+//{}
 
-void init_w(int size, vector<float>& w){
+void Utils::init_w(){
     float init_w = 0.0;
-    for(size_t j = 0; j < size; j++){
+    for(size_t j = 0; j < fea_dim; j++){
         w.push_back(init_w);
     }
 }
-
+/*
 void savemodel(vector<float> &theta,int myid){
     ofstream fout("train.model");
     fout.setf(ios::fixed,ios::floatfield);

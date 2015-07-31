@@ -7,7 +7,7 @@
 #include <string.h>
 #include <deque>
 #include <pthread.h>
-#include "utils.h"
+//#include "utils.h"
 //#include </opt/OpenBLAS/include/cblas.h>
 
 class OPT_ALGO{
@@ -19,8 +19,8 @@ public:
     //void load_one_sample(string sample_file);  
     float sigmoid(float x);
     //void sgd(int myid, int numprocs);
-
     void owlqn(int myid, int numprocs);
+   
     //float fun(vector<float>& w);
     //void grad(vector<float>& w, vector<float>& g);
     //void sub_gradient(vector<float>& w, vector<float>& g, vector<float>& sub_g);

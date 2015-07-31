@@ -3,7 +3,7 @@
 train:main.o opt_algo.o utils.o  
 	mpicxx -g -o train -lpthread -L/opt/OpenBLAS/lib -lopenblas main.o
 
-main.o: main.cpp
+main.o: main.cpp opt_algo.h utils.h utils.cpp 
 	mpicxx -I /opt/OpenBLAS/include -c main.cpp
 
 opt_algo.o: opt_algo.cpp opt_algo.h 

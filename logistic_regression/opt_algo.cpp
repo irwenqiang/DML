@@ -1,5 +1,14 @@
 #include "opt_algo.h"
 
+
+OPT_ALGO::OPT_ALGO()
+{
+}
+
+OPT_ALGO::~OPT_ALGO()
+{
+}
+
 float OPT_ALGO::sigmoid(float x)
 {
     double sgm = 1/(1+exp(-(double)x));
