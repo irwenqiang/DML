@@ -1,58 +1,57 @@
+#include <iostream>
+#include <fstream>
 #include "utils.h"
 
-/*vector<string> Utils::splitline(string &line，string split_tag){
-    vector<string> tmp_vec;
+std::vector<std::string> Utils::split_line(){
+    std::vector<std::string> tmp_vec;
     size_t start = 0, end = 0;
-    while((end = line.find_first_of(split_tag, start)) != string::npos){
+    while((end = line.find_first_of(split_tag, start)) != std::string::npos){
         if(end > start){
-            string index_str = line.substr(start, end - start);
+            std::string index_str = line.substr(start, end - start);
             tmp_vec.push_back(index_str);
         }
         start = end + 1;
     }
     if(start < line.size()){
-        string index_end = line.substr(start);
+        std::string index_end = line.substr(start);
         tmp_vec.push_back(index_end);
     }
     return tmp_vec;
 }
 
-void Utils::mk_feature(string train_file, split_tag){
-    ifstream fin(train_file.c_str());
-    if(!fin)cerr<<"open error get feature number..."<<train_file<<endl;
-    vector<string> feature_index;
-    vector<sparse_feature> key_val;
-    sparse_feature sf;
-    string line, index_str;
-    int y = 0, index = 0, val = 0;
+void Utils::mk_feature(std::string file_name, std::string split_tag){
+    std::ifstream fin(file_name.c_str(), std::ios::in);
+    if(!fin) std::cerr<<"open error get feature number..."<<file_name<<std::endl;
+    int y = 0, index = 0, value = 0;
     while(getline(fin,line)){
         key_val.clear();
         feature_index.clear();
-        feature_index = splitline(line);
+        feature_index = split_line();
         y = atoi(feature_index[0].c_str());
-        Utils.label.push_back(y);
+        label.push_back(y);
         for(int i = 1; i < feature_index.size(); i++){
             int start = 0, end = 0;
-            while((end = feature_index[i].find_first_of(split_tag, start)) != string::npos){
+            while((end = feature_index[i].find_first_of(split_tag, start)) != std::string::npos){
                 if(end > start){
                     index_str = feature_index[i].substr(start, end - start);
-                    index = atoi(indexstr.c_str());
+                    index = atoi(index_str.c_str());
                     sf.idx = index - 1;
                 }
                 //beg += 1; //this code must remain,it makes me crazy two days!!!
                 start = end + 1;
             }
             if(start < feature_index[i].size()){
-                string index_end = feature_index[i].substr(start);
-                value = atoi(inde_xend.c_str());
+                std::string index_end = feature_index[i].substr(start);
+                value = atoi(index_end.c_str());
                 sf.val = value;
             }
             key_val.push_back(sf);
         }
-        Utils.feature_matrix.push_back(key_val);
+        feature_matrix.push_back(key_val);
     }
     fin.close();
 }
+/*
 void load_one_sample(string sample_filename)
 {}
 

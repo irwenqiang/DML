@@ -14,8 +14,6 @@ class OPT_ALGO{
 public:
     OPT_ALGO();
     ~OPT_ALGO();
-    std::vector<std::vector<sparse_feature> > feature_matrix;//feature matrix
-    std::vector<int> label;
     std::vector<float> w;//parameter of logistic regression
     
     //void load_one_sample(string sample_file);  
@@ -31,7 +29,6 @@ public:
     //void fixdir(vector<float>& sub_g, vector<float>& g);
     //void linesearch(float old_f, vector<float>&sub_g, vector<float>& g, vector<float>& nextw);
 private:
-    std::string filename;
     //deque<vector<float> > ylist;
     //deque<vector<float> > slist;
     //vector<float> rolist;
