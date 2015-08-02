@@ -1,6 +1,11 @@
+#include <iostream>
+#include <vector>
 #include "opt_algo.h"
 #include "utils.h"
 
+extern "C"{
+#include <cblas.h>
+}
 
 OPT_ALGO::OPT_ALGO()
 {
@@ -82,8 +87,9 @@ void OPT_ALGO::grad(vector<float>& w, vector<float>& g){
         g[j] /= feature_matrix.size();
     }
 }
-                                                      
-void OPT_ALGO::sub_gradient(vector<float>& w,vector<float>& g, vector<float>& sub_g){
+*/                                                      
+/*
+void OPT_ALGO::sub_gradient(std::vector<float>& w, std::vector<float>& g, std::vector<float>& sub_g){
     if(c == 0){
         for(size_t j = 0; j < sub_g.size(); j++){
             sub_g[j] = -g[j];
@@ -105,6 +111,8 @@ void OPT_ALGO::sub_gradient(vector<float>& w,vector<float>& g, vector<float>& su
         }
     }
 }
+*/
+/*
 void OPT_ALGO::two_loop(vector<float>& sub_g){
     //ro = 1/ ro;
     vector<float> q = sub_g;
@@ -153,14 +161,22 @@ void OPT_ALGO::linesearch(float old_f, vector<float>& w,
     }
 }
 */  
-/*
-void OPT_ALGO::parallel_owlqn(float f, vector<float>& w, vector<float>& g){//inner thread, write g~ to g, mutex!
+
+void OPT_ALGO::parallel_owlqn(std::vector<double>* w, std::vector<std::vector<sparse_feature> >* fea_matrix){//inner thread, write g~ to g, mutex!
     //pthread_mutex_lock(&mutex);
-    vector<float> next_w;
-    vector<float> sub_g;
-    float ro;
-    ccopy_(sub_g.size(), sub_g, 1, g, 1);
-    if(slist.size() >= m){
+    int dim = (*w).size(); 
+    //vector<double> next_w;
+    double sub_g[dim];
+    double g[dim];
+    for(int j = 0; j < dim; j++){
+       g[j] = (*w)[j];
+    }
+    double c = 1.0;
+    double ro = 0.0;
+    int one = 1;
+    cblas_dcopy(dim, g, one, sub_g, one);
+
+    /*if(slist.size() >= m){
         two_loop(slist, ylist, rolist, sub_g);
     }
     fixdir(sub_g, g);
@@ -181,27 +197,30 @@ void OPT_ALGO::parallel_owlqn(float f, vector<float>& w, vector<float>& g){//inn
     if(slist.size() > m){
         slist.pop_front();
         ylist.pop_front();
-    }
-}*/
+    }*/
+}
 
 void OPT_ALGO::owlqn(std::vector<double>* w, std::vector<std::vector<sparse_feature> >* fea_matrix, int myid, int num_procs){
     int step = 0;
     std::string line;
-    std::cout<<(*w).size()<<"------"<<myid<<std::endl;
-    std::vector<int> index;
-    std::cout<<"training by owlqn start "<<std::endl;
-    //vector<float> sub_g(dim);
-    //vector<float> g(dim);
+    //std::cout<<(*w).size()<<"------"<<myid<<std::endl;
+    //std::vector<int> index;
+    //std::cout<<"training by owlqn start "<<std::endl;
+    int m = 6;
+    std::deque<std::vector<float> > slist(m);
+    std::deque<std::vector<float> > ylist(m);
+    //std::vector<double> sub_g(dim);
+    //std::vector<float> g(dim);
     //vector<float> y_score(dim);
     //vector<float> pr_func;
-    /*float oldval = 0.0;
-    MPI_Allreduce(&w);
-    f = fun(w);
-    MPI_Allreduce(&w);
-    grad(w, g);*/
-    //while(step < 2){
-    //    parallel_owlqn(f, w, g);        
-    //}
+    //float oldval = 0.0;
+    //MPI_Allreduce(&w);
+    //f = fun(w);
+    //MPI_Allreduce(&w);
+    //grad(w, g);
+    while(step < 2){
+        parallel_owlqn(w, fea_matrix);        
+    }
 }
 
 

@@ -20,11 +20,11 @@ public:
     //void sgd(int myid, int numprocs);
 
     void owlqn(std::vector<double>* w, std::vector<std::vector<sparse_feature> >* fea_matrix, int myid, int num_procs);
+    void sub_gradient(std::vector<float>& w, std::vector<float>& g, std::vector<float>& sub_g);
     //float fun(vector<float>& w);
     //void grad(vector<float>& w, vector<float>& g);
-    //void sub_gradient(vector<float>& w, vector<float>& g, vector<float>& sub_g);
     //void two_loop(vector<float>& sub_g);
-    //void parallel_owlqn(float old_val, float newval);
+    void parallel_owlqn(std::vector<double>* w, std::vector<std::vector<sparse_feature> >* fea_matrix);
     //void fixdir(vector<float>& sub_g, vector<float>& g);
     //void linesearch(float old_f, vector<float>&sub_g, vector<float>& g, vector<float>& nextw);
 private:

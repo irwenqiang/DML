@@ -1,7 +1,8 @@
 #!/bin/bash
 
+#train code
 train:main.o opt_algo.o utils.o  
-	mpicxx -g -o train -lpthread -L/opt/OpenBLAS/lib -lopenblas main.o
+	mpicxx -o train main.o -L/opt/OpenBLAS/lib -lopenblas -lpthread
 
 main.o: main.cpp 
 	mpicxx -I /opt/OpenBLAS/include -c main.cpp
@@ -12,6 +13,7 @@ opt_algo.o: opt_algo.cpp opt_algo.h
 utils.o: utils.cpp utils.h
 	mpicxx -I /opt/OpenBLAS/include/ -c utils.cpp
 
+#predict code
 predict:predict.o
 	mpicxx -g -o predict -lpthread -L/opt/OpenBLAS/lib -lopenblas predict.o
 
