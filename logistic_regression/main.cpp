@@ -12,7 +12,7 @@ Utils u;
 OPT_ALGO opt;
 
 struct ThreadParam{
-        std::vector<double>* w;
+        std::vector<double>* theta;
         std::vector<std::vector<sparse_feature> >* fea_matrix;
         std::vector<double> *label;
         int proc_id;
@@ -22,7 +22,7 @@ struct ThreadParam{
 void *opt_algo(void *arg){
     ThreadParam* args = (ThreadParam*) arg;
     std::cout<<args->proc_id<<std::endl;
-    opt.owlqn(args->w, args->fea_matrix, args->label, args->proc_id, args->n_proc);
+    opt.owlqn(args->theta, args->fea_matrix, args->label, args->proc_id, args->n_proc);
 
 }
 
@@ -32,31 +32,35 @@ int main(int argc,char* argv[]){
     MPI_Init(&argc,&argv);
     MPI_Comm_rank(MPI_COMM_WORLD,&myid);
     MPI_Comm_size(MPI_COMM_WORLD,&numprocs);
-    u.train_file = "./data/traindata.txt";
-    u.test_file = "./data/testdata.txt";
-    u.split_tag = '\t';
-    u.mk_feature(u.train_file, u.split_tag);
-    u.get_fea_dim();
-    int fea_dim = u.fea_dim;    
+    opt.train_file = "./data/traindata.txt";
+    opt.test_file = "./data/testdata.txt";
+    opt.split_tag = '\t';
+    u.mk_feature(opt.train_file, opt.split_tag, opt.fea_matrix, opt.label);
+    u.get_fea_dim(opt.fea_matrix, opt.fea_dim);
+    int fea_dim = opt.fea_dim;    
+    std::cout<<fea_dim<<std::endl;
     MPI_Bcast(&fea_dim, 1, MPI_INT, 0, MPI_COMM_WORLD);
     if(myid != 0) std::cout<<myid<<":"<<fea_dim<<std::endl;
-    u.init_w();
-    //opt.sgd(opt.w, myid, numprocs);
+    u.init_theta(opt.theta, opt.fea_dim);
     int n_threads = 3;
     std::vector<ThreadParam> params;
+    std::vector<pthread_t> threads;
     for(int i = 0; i < n_threads; i++){
-        ThreadParam param = {&u.w, &u.feature_matrix, &u.label, myid, numprocs};
+        ThreadParam param = {opt.theta, opt.fea_matrix, opt.label, myid, numprocs};
         params.push_back(param);
     } 
+    /*
     for(int i = 0; i < params.size(); i++){
         pthread_t thread;
         int ret = pthread_create(&thread, NULL, &opt_algo, (void*)&(params[i])); 
+        if(ret != 0) std::cout<<"process "<<i<<"failed(create thread faild.)"<<std::endl;
+        else threads.push_back(thread);
+            
     }
-    /*
-    //opt.savemodel(opt.theta, myid);
-    //opt.predict(test_file, opt.theta, myid);
-    int ret_code = MPI_Finalize();
-    fprintf(stderr,"%i,%i\n",myid, ret_code);*/
+    for(int i = 0; i < threads.size(); i++){
+        pthread_join(threads[i], 0); 
+    }
+    */
     MPI::Finalize();
     return 0;
 }

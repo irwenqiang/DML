@@ -21,7 +21,7 @@ float OPT_ALGO::sigmoid(float x)
     return (float)sgm;
 }
 //----------------------------owlqn--------------------------------------------
-double OPT_ALGO::f_val(int dim, double *g, std::vector<std::vector<sparse_feature> > *fea_matrix, std::vector<double> *label){
+double OPT_ALGO::f_val(int dim, double *g, std::vector<std::vector<sparse_feature> > *fea_matrix){
     double f = 0.0;
     for(int i = 0; i < (*fea_matrix).size(); i++){
         double x = 0.0;
@@ -63,10 +63,10 @@ void OPT_ALGO::sub_gradient(double g[], double sub_g[], int dim, double c){
     }
     else{
         for(int j = 0; j < dim; j++){
-            if(w[j] > 0){
+            if(g[j] > 0){
                 sub_g[j] = g[j] - c;
             }
-            else if(w[j] < 0){
+            else if(g[j] < 0){
                 sub_g[j] = g[j] - c;
             }
             else {
@@ -111,7 +111,7 @@ void OPT_ALGO::fixdir(int dim, double *sub_g, double *g){
     }
 }
  
-void OPT_ALGO::linesearch(int dim, double old_f, double *sub_g, double *g, double *next_g, std::vector<std::vector<sparse_feature> >* fea_matrix, std::vector<double> *label){
+void OPT_ALGO::linesearch(int dim, double old_f, double *sub_g, double *g, double *next_g){
     float alpha = 1.0;
     double beta = 1e-4;
     double backoff = 0.5;
@@ -120,7 +120,7 @@ void OPT_ALGO::linesearch(int dim, double old_f, double *sub_g, double *g, doubl
             next_g[j] = g[j] + alpha*sub_g[j];
         }
         fixdir(dim, g, next_g);
-        double new_f = f_val(dim, g, fea_matrix, label);
+        double new_f = f_val(dim, g, fea_matrix);
         f_grad(dim, g, fea_matrix, label);
         if(new_f <= old_f + beta * cblas_ddot(dim, next_g, 1, g, 1)){
             break;
@@ -128,13 +128,13 @@ void OPT_ALGO::linesearch(int dim, double old_f, double *sub_g, double *g, doubl
         alpha *= backoff;
         old_f = new_f;
         for(int j = 0; j < dim; j++){
-            w[j] = next_g[j];
+            g[j] = next_g[j];
         }
         break;
     }
 }
   
-void OPT_ALGO::parallel_owlqn(std::vector<double>* w, std::vector<std::vector<sparse_feature> >* fea_matrix, std::vector<double>* label){
+void OPT_ALGO::parallel_owlqn(std::vector<double>* w){
     //pthread_mutex_lock(&mutex);
     int dim = (*w).size(); 
     double sub_g[dim];
@@ -164,9 +164,10 @@ void OPT_ALGO::parallel_owlqn(std::vector<double>* w, std::vector<std::vector<sp
         two_loop(m, dim, sub_g, s_list, y_list, ro_list, g);
     }
     fixdir(dim, sub_g, g);
-    double old_f = f_val(dim, g, fea_matrix, label);
+    double old_f = f_val(dim, g, fea_matrix);//maybe f_val(dim, g, fea_matrix);
     double next_g[dim];
-    linesearch(dim, old_f, sub_g, g, next_g, fea_matrix, label);
+    //linesearch(dim, old_f, sub_g, g, next_g, fea_matrix, label);
+    linesearch(dim, old_f, sub_g, g, next_g);
     //pthread_mutex_unlock(&mutex);
     //update slist
     cblas_daxpy(dim, -1, g, 1, next_g, 1);
@@ -187,7 +188,7 @@ void OPT_ALGO::parallel_owlqn(std::vector<double>* w, std::vector<std::vector<sp
 void OPT_ALGO::owlqn(std::vector<double>* w, std::vector<std::vector<sparse_feature> >* fea_matrix, std::vector<double> *label, int myid, int num_procs){
     int step = 0;
     while(step < 2){
-        parallel_owlqn(w, fea_matrix, label);        
+        parallel_owlqn(w);        
     }
 }
 

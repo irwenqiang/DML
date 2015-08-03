@@ -2,6 +2,7 @@
 #include <fstream>
 #include "utils.h"
 
+
 Utils::Utils()
 {
 }
@@ -10,7 +11,8 @@ Utils::~Utils()
 {
 }
 
-std::vector<std::string> Utils::split_line(){
+
+std::vector<std::string> Utils::split_line(std::string split_tag){
     std::vector<std::string> tmp_vec;
     size_t start = 0, end = 0;
     while((end = line.find_first_of(split_tag, start)) != std::string::npos){
@@ -27,16 +29,16 @@ std::vector<std::string> Utils::split_line(){
     return tmp_vec;
 }
 
-void Utils::mk_feature(std::string file_name, std::string split_tag){
+void Utils::mk_feature(std::string file_name, std::string split_tag, std::vector<std::vector<sparse_feature> >* fea_matrix, std::vector<double>* label){
     std::ifstream fin(file_name.c_str(), std::ios::in);
     if(!fin) std::cerr<<"open error get feature number..."<<file_name<<std::endl;
     int y = 0, index = 0, value = 0;
     while(getline(fin,line)){
         key_val.clear();
         feature_index.clear();
-        feature_index = split_line();
-        y = atoi(feature_index[0].c_str());
-        label.push_back(y);
+        feature_index = split_line(split_tag);
+        y = atof(feature_index[0].c_str());
+        (*label).push_back(y);
         for(int i = 1; i < feature_index.size(); i++){
             int start = 0, end = 0;
             while((end = feature_index[i].find_first_of(split_tag, start)) != std::string::npos){
@@ -55,21 +57,21 @@ void Utils::mk_feature(std::string file_name, std::string split_tag){
             }
             key_val.push_back(sf);
         }
-        feature_matrix.push_back(key_val);
+        (*fea_matrix).push_back(key_val);
     }
     fin.close();
 }
   
-void Utils::get_fea_dim(){
-    fea_dim = feature_matrix.size();
+void Utils::get_fea_dim(std::vector<std::vector<sparse_feature> >* fea_matrix, int fea_dim){
+    fea_dim = (*fea_matrix).size();
 }
 //void load_one_sample(string sample_filename)
 //{}
 
-void Utils::init_w(){
-    float init_w = 0.0;
+void Utils::init_theta(std::vector<double>* theta, int fea_dim){
+    float init_theta = 0.0;
     for(size_t j = 0; j < fea_dim; j++){
-        w.push_back(init_w);
+        (*theta).push_back(init_theta);
     }
 }
 /*
