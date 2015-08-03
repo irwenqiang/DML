@@ -21,7 +21,7 @@ public:
 
     void owlqn(std::vector<double>* w, std::vector<std::vector<sparse_feature> >* fea_matrix, std::vector<double> *label, int myid, int num_procs);
     void sub_gradient(double g[], double sub_g[], int dim, double c);
-    //void grad(vector<float>& w, vector<float>& g);
+    void f_grad(int dim, double *g, std::vector<std::vector<sparse_feature> >* fea_matrix, std::vector<double> *label);
     void two_loop(int m, int dim, double *sub_g, double **s_list, double **y_list, double *ro_list, double *g);
     void parallel_owlqn(std::vector<double>* w, std::vector<std::vector<sparse_feature> >* fea_matrix, std::vector<double> *label);
     void fixdir(int dim, double *sub_g, double *g);

@@ -36,26 +36,25 @@ double OPT_ALGO::f_val(int dim, double *g, std::vector<std::vector<sparse_featur
     }
     return f;
 }
-/*
-void OPT_ALGO::grad(vector<float>& w, vector<float>& g){
+
+void OPT_ALGO::f_grad(int dim, double *g, std::vector<std::vector<sparse_feature> >* fea_matrix, std::vector<double> *label){
     float f = 0.0;
-    for(int i = 0; i < feature_matrix.size(); i++){
+    for(int i = 0; i < (*fea_matrix).size(); i++){
         double x = 0.0, value;
         int index;
-        for(int j = 0; j < feature_matrix[i].size(); j++){
-            index = feature_matrix[i][j].idx;
-            value = feature_matrix[i][j].val;
-            x += w[index]*value;
+        for(int j = 0; j < (*fea_matrix)[i].size(); j++){
+            index = (*fea_matrix)[i][j].idx;
+            value = (*fea_matrix)[i][j].val;
+            x += *(g+index) * value;
         }
-        for(int j = 0; j < feature_matrix[i].size(); j++){
-            g[j] += label[i]*sigmoid(x)*value + (1-label[i])*sigmoid(x)*value;
+        for(int j = 0; j < (*fea_matrix)[i].size(); j++){
+            *(g+j) += (*label)[i] * sigmoid(x) * value + (1 - (*label)[i]) * sigmoid(x) * value;
         }
     }
-    for(int j = 0; j < g.size(); j++){
-        g[j] /= feature_matrix.size();
+    for(int j = 0; j < dim; j++){
+        *(g+j) /= (*fea_matrix).size();
     }
 }
-*/                                                      
 
 void OPT_ALGO::sub_gradient(double g[], double sub_g[], int dim, double c){
     if(c == 0.0){
@@ -126,15 +125,15 @@ void OPT_ALGO::linesearch(int dim, double old_f, double *sub_g, double *g, doubl
         }
         fixdir(dim, g, next_g);
         double new_f = f_val(dim, g, fea_matrix, label);
-        /*
+        f_grad(dim, g, fea_matrix, label);
         if(new_f <= old_f + beta * cblas_ddot(dim, next_g, 1, g, 1)){
             break;
         }
         alpha *= backoff;
-        old_f = newf;
+        old_f = new_f;
         for(int j = 0; j < dim; j++){
             w[j] = next_g[j];
-        }*/
+        }
         break;
     }
 }
