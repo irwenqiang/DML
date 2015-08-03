@@ -14,6 +14,7 @@ OPT_ALGO opt;
 struct ThreadParam{
         std::vector<double>* w;
         std::vector<std::vector<sparse_feature> >* fea_matrix;
+        std::vector<double> *label;
         int proc_id;
         int n_proc;
 };
@@ -21,7 +22,7 @@ struct ThreadParam{
 void *opt_algo(void *arg){
     ThreadParam* args = (ThreadParam*) arg;
     std::cout<<args->proc_id<<std::endl;
-    opt.owlqn(args->w, args->fea_matrix, args->proc_id, args->n_proc);
+    opt.owlqn(args->w, args->fea_matrix, args->label, args->proc_id, args->n_proc);
 
 }
 
@@ -44,7 +45,7 @@ int main(int argc,char* argv[]){
     int n_threads = 3;
     std::vector<ThreadParam> params;
     for(int i = 0; i < n_threads; i++){
-        ThreadParam param = {&u.w, &u.feature_matrix, myid, numprocs};
+        ThreadParam param = {&u.w, &u.feature_matrix, &u.label, myid, numprocs};
         params.push_back(param);
     } 
     for(int i = 0; i < params.size(); i++){
