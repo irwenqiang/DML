@@ -25,8 +25,8 @@ public:
     std::vector<std::string> split_line(std::string line, std::string split_tag);
     void cal_fea_dim();
     void init_theta();
-    void owlqn(OPT_ALGO *opt, int proc_id, int n_procs);
-    void parallel_owlqn(OPT_ALGO *opt, float *local_theta); 
+    void owlqn(int proc_id, int n_procs);
+    void parallel_owlqn(float *local_theta); 
     void f_grad(float *local_theta, float *g);
     float sigmoid(float x);
     void sub_gradient(float *g, float *sub_g);
