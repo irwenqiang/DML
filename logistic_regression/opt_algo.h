@@ -32,7 +32,7 @@ public:
     void two_loop(float *local_theta, float *sub_g, float **s_list, float **y_list, float *ro_list);
     void fix_dir(float *sub_g, float *g);
     void line_search(float *sub_g, float *local_theta, float *next_theta);
-    double f_val(float *local_theta)
+    float f_val(float *local_theta);
 
     std::vector<std::vector<sparse_feature> > fea_matrix;
     std::string index_str;
