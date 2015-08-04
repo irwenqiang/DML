@@ -1,10 +1,10 @@
+#include "opt_algo.h"
 #include "mpi.h"
 #include <string.h>
 #include <stdlib.h>
 #include <time.h>
 #include <iomanip>
 #include <pthread.h>
-#include "opt_algo.cpp"
 
 struct ThreadParam{
     OPT_ALGO *opt;

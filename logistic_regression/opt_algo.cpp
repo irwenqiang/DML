@@ -1,6 +1,6 @@
+#include "opt_algo.h"
 #include <iostream>
 #include <vector>
-#include "opt_algo.h"
 
 extern "C"{
 #include <cblas.h>
