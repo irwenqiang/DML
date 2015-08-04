@@ -1,6 +1,7 @@
+#include "opt_algo.h"
+#include "mpi.h"
 #include <iostream>
 #include <vector>
-#include "opt_algo.h"
 
 extern "C"{
 #include <cblas.h>
@@ -180,6 +181,9 @@ void OPT_ALGO::line_search(float *sub_g, float *local_theta, float *next_theta){
     float beta = 1e-4;
     float backoff = 0.5;
     while(true){
+        for(int j = 0; j < fea_dim; j++){
+            local_theta[j] = next_theta[j];
+        }
         float old_f_v = f_val(local_theta);
         for(int j = 0; j < fea_dim; j++){
             *(next_theta + j) = *(local_theta + j) + alpha * *(sub_g + j);
@@ -192,20 +196,16 @@ void OPT_ALGO::line_search(float *sub_g, float *local_theta, float *next_theta){
             break;
         }
         alpha *= backoff;
-        for(int j = 0; j < fea_dim; j++){
-            local_theta[j] = next_theta[j];
-        }
         break;
     }
 }
 
-void OPT_ALGO::parallel_owlqn(OPT_ALGO *opt, float *local_theta){
+void OPT_ALGO::parallel_owlqn(float *local_theta){
     //pthread_mutex_lock(&mutex);
-    std::cout<<fea_dim<<std::endl;
     float *sub_g = new float[fea_dim];
     float *g = new float[fea_dim];
     for(int j = 0; j < fea_dim; j++){
-       local_theta[j] = opt->theta[j];
+       local_theta[j] = theta[j];
     }
     float *f_g_old = new float[fea_dim];
     f_grad(local_theta, f_g_old);
@@ -248,15 +248,32 @@ void OPT_ALGO::parallel_owlqn(OPT_ALGO *opt, float *local_theta){
             *(*(y_list + (use_list_len - m) % m) + j) = 0.0;        
         }
     }
+    for(int j = 0; j < fea_dim; j++){
+        *(local_theta + j) = *(next_theta + j);
+    }
 }
 
-void OPT_ALGO::owlqn(OPT_ALGO *opt, int proc_id, int n_procs){
+void OPT_ALGO::owlqn(int proc_id, int n_procs){
     int step = 0;
-    std::cout<<opt->fea_dim<<std::endl;
+    std::cout<<proc_id<<std::endl;
     float *local_theta = new float[fea_dim];
+    pthread_mutex_t mutex;
     while(step < 2){
-        parallel_owlqn(opt, local_theta);        
+        parallel_owlqn(local_theta);        
+        pthread_mutex_lock(&mutex); 
+        for(int j = 0; j < fea_dim; j++){
+            theta[j] = *(local_theta + j);
+        } 
+        pthread_mutex_unlock(&mutex);
         step++;
+    }
+    
+    if(proc_id == 0){
+        float *global_theta = new float[fea_dim];
+        for(int j = 0; j < fea_dim; j++){
+            *(global_theta + j) = theta[j];
+        }     
+        MPI_Allreduce(global_theta, local_theta, 1, MPI_FLOAT, MPI_SUM, MPI_COMM_WORLD);
     }
 }
 

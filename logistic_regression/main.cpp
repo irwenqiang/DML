@@ -1,10 +1,10 @@
+#include "opt_algo.h"
 #include "mpi.h"
 #include <string.h>
 #include <stdlib.h>
 #include <time.h>
 #include <iomanip>
 #include <pthread.h>
-#include "opt_algo.cpp"
 
 struct ThreadParam{
     OPT_ALGO *opt;
@@ -14,7 +14,7 @@ struct ThreadParam{
 
 void *opt_algo(void *arg){
    ThreadParam *args = (ThreadParam*)arg;
-   args->opt->owlqn(args->opt, args->proc_id, args->n_procs); 
+   args->opt->owlqn(args->proc_id, args->n_procs); 
 }
 
 int main(int argc,char* argv[]){  
@@ -30,13 +30,12 @@ int main(int argc,char* argv[]){
     std::string test_data_file = "./data/testdata.txt";
     std::string split_tag = "\t";
     opt.load_data(train_data_file, split_tag);
-    std::cout<<opt.label.size()<<std::endl;
     opt.cal_fea_dim();
     MPI_Bcast(&opt.fea_dim, 1, MPI_INT, 0, MPI_COMM_WORLD);
     if(myid != 0) std::cout<<myid<<":"<<opt.fea_dim<<std::endl;
     opt.init_theta();
 
-    int n_threads = 3;
+    int n_threads = 2;
     std::vector<ThreadParam> params;
     std::vector<pthread_t> threads;
     for(int i = 0; i < n_threads; i++){
