@@ -268,8 +268,8 @@ void OPT_ALGO::parallel_owlqn(){
     line_search(local_g);
     //pthread_mutex_unlock(&mutex);
     //update slist
-    //cblas_daxpy(fea_dim, -1, (double*)w, 1, (double*)next_w, 1);
-    //cblas_dcopy(fea_dim, (double*)next_w, 1, (double*)s_list[use_list_len], 1);
+    cblas_daxpy(fea_dim, -1, (double*)w, 1, (double*)next_w, 1);
+    cblas_dcopy(fea_dim, (double*)next_w, 1, (double*)s_list[use_list_len], 1);
     //update ylist
     cblas_daxpy(fea_dim, -1, (double*)global_g, 1, (double*)global_next_g, 1); 
     cblas_dcopy(fea_dim, (double*)global_next_g, 1, (double*)y_list[use_list_len], 1);
