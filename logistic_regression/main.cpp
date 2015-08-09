@@ -29,18 +29,17 @@ int main(int argc,char* argv[]){
     std::string train_data_file = "./data/traindata.txt";
     std::string test_data_file = "./data/testdata.txt";
     std::string split_tag = "\t";
+
     //call by main thread
     opt.load_data(train_data_file, split_tag);
     opt.cal_fea_dim();
     MPI_Bcast(&opt.fea_dim, 1, MPI_INT, 0, MPI_COMM_WORLD);
-    if(myid != 0) std::cout<<myid<<":"<<opt.fea_dim<<std::endl;
     opt.init_theta();
 
     //pthread start
-    int n_threads = 2;
     std::vector<ThreadParam> params;
     std::vector<pthread_t> threads;
-    for(int i = 0; i < n_threads; i++){
+    for(int i = 0; i < opt.n_threads; i++){//construct parameter
         ThreadParam param = {&opt, myid, numprocs};
         params.push_back(param);
     } 
@@ -51,9 +50,10 @@ int main(int argc,char* argv[]){
         else threads.push_back(thread);
             
     }
-    for(int i = 0; i < threads.size(); i++){
+    for(int i = 0; i < threads.size(); i++){//join threads function
         pthread_join(threads[i], 0); 
     }
+
     MPI::Finalize();
     return 0;
 }
