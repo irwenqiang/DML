@@ -20,48 +20,53 @@ std::vector<std::string> OPT_ALGO::split_line(std::string split_tag){
     int start = 0, end = 0;
     while((end = line.find_first_of(split_tag, start)) != std::string::npos){
         if(end > start){
-            std::string index_str = line.substr(start, end - start);
+            index_str = line.substr(start, end - start);
             tmp_vec.push_back(index_str);
         }
         start = end + 1;
     }
     if(start < line.size()){
-        std::string index_end = line.substr(start);
-        tmp_vec.push_back(index_end);
+        index_str = line.substr(start);
+        tmp_vec.push_back(index_str);
     }
     return tmp_vec;
 }
 
+void OPT_ALGO::get_feature_struct(std::vector<std::string> feature_index){
+    int index = 0, value = 0;
+    for(int i = 1; i < feature_index.size(); i++){
+	int start = 0, end = 0;
+	while((end = feature_index[i].find_first_of(":", start)) != std::string::npos){
+            if(end > start){
+	        index_str = feature_index[i].substr(start, end - start);
+	        index = atoi(index_str.c_str());
+		sf.idx = index - 1;
+            }
+            //beg += 1; //this code must remain,it makes me crazy two days!!!
+            start = end + 1;
+	}
+	if(start < feature_index[i].size()){
+            index_str = feature_index[i].substr(start);
+            value = atoi(index_str.c_str());
+            sf.val = value;
+        }
+        key_val.push_back(sf);
+    }
+}
 
 void OPT_ALGO::load_data(std::string data_file, std::string split_tag){
     std::ifstream fin(data_file.c_str(), std::ios::in);
     if(!fin) std::cerr<<"open error get feature number..."<<data_file<<std::endl;
-    int y = 0, index = 0, value = 0;
-    
+
+    int y = 0;
     while(getline(fin,line)){
         key_val.clear();
         feature_index.clear();
+
         feature_index = split_line(split_tag);
         y = atof(feature_index[0].c_str());
         label.push_back(y);
-        for(int i = 1; i < feature_index.size(); i++){
-            int start = 0, end = 0;
-            while((end = feature_index[i].find_first_of(":", start)) != std::string::npos){
-                if(end > start){
-                    index_str = feature_index[i].substr(start, end - start);
-                    index = atoi(index_str.c_str());
-                    sf.idx = index - 1;
-                }
-                //beg += 1; //this code must remain,it makes me crazy two days!!!
-                start = end + 1;
-            }
-            if(start < feature_index[i].size()){
-                std::string index_end = feature_index[i].substr(start);
-                value = atoi(index_end.c_str());
-                sf.val = value;
-            }
-            key_val.push_back(sf);
-        }
+        get_feature_struct(feature_index);
         fea_matrix.push_back(key_val);
     }
     fin.close();
@@ -72,7 +77,6 @@ void OPT_ALGO::cal_fea_dim(){
 }
 
 void OPT_ALGO::init_theta(){
-    float init_w = 0.0;
     c = 1.0;
     m = 6;
     n_threads = 3;
@@ -83,7 +87,8 @@ void OPT_ALGO::init_theta(){
 
     global_old_loss_val = 0.0;
     global_new_loss_val = 0.0;
-
+    
+    float init_w = 0.0;
     for(int j = 0; j < fea_dim; j++){
         *(w + j) = init_w;
         *(next_w + j) = init_w;
@@ -117,7 +122,7 @@ float OPT_ALGO::f_val(float *para_w){
 void OPT_ALGO::f_grad(float *para_w, float *para_g){
     float f = 0.0;
     for(int i = 0; i < fea_matrix.size(); i++){
-        double x = 0.0, value;
+        float x = 0.0, value = 0.0;
         int index;
         for(int j = 0; j < fea_matrix[i].size(); j++){
             index = fea_matrix[i][j].idx;
@@ -132,6 +137,7 @@ void OPT_ALGO::f_grad(float *para_w, float *para_g){
         *(para_g + j) /= fea_matrix.size();
     }
 }
+
 void OPT_ALGO::sub_gradient(float * local_g, float *local_sub_g){
     if(c == 0.0){
         for(int j = 0; j < fea_dim; j++){
@@ -189,16 +195,12 @@ void OPT_ALGO::line_search(float *local_g){
     float beta = 1e-4;
     float backoff = 0.5;
     while(true){
-        //for(int j = 0; j < fea_dim; j++){
-          //  local_theta[j] = next_theta[j];
-        // }
         float old_loss_val = f_val(w);//cal loss value per thread
 
         float local_old_loss_val = 0.0;
         float local_new_loss_val = 0.0;
 
         pthread_mutex_t mutex;
-
         pthread_mutex_lock(&mutex);
         global_old_loss_val += old_loss_val;//add old loss value of all threads
         pthread_mutex_unlock(&mutex); 
@@ -209,15 +211,12 @@ void OPT_ALGO::line_search(float *local_g){
         }
         fix_dir(w, next_w);//orthant limited
         float new_loss_val = f_val(next_w);//cal new loss per thread
+
         pthread_mutex_lock(&mutex);
         global_new_loss_val += new_loss_val;//sum all threads loss value
         pthread_mutex_unlock(&mutex);
         MPI_Allreduce(&global_new_loss_val, &local_new_loss_val, 1, MPI_FLOAT, MPI_SUM, MPI_COMM_WORLD);//sum all nodes loss.
-        float *l_l_w = new float[fea_dim];
-        for(int j = 0; j < fea_dim; j++){
-            *(l_l_w + j) = *(next_w + j);
-        } 
-        f_grad(l_l_w, global_next_g);
+        f_grad(next_w, global_next_g);
         if(local_new_loss_val <= local_old_loss_val + beta * cblas_ddot(fea_dim, (double*)local_g, 1, (double*)global_next_g, 1)){
             break;
         }
@@ -227,20 +226,13 @@ void OPT_ALGO::line_search(float *local_g){
 }
 
 void OPT_ALGO::parallel_owlqn(){
+    //define and initial local parameters
     int use_list_len = 0;
-    
     float *local_g = new float[fea_dim];
     float *local_sub_g = new float[fea_dim];
     float *p = new float[fea_dim];
-
-    float *local_w = new float[fea_dim];
     float *ro_list = new float[fea_dim];
-    /*
-    for(int i = 0; i < fea_dim; i++){
-        std::cout<<*(local_g+i);
-    }
-    std::cout<<std::endl;
-    */
+
     float **s_list = new float*[m];
     s_list[0] = new float[m * fea_dim];
     for(int i = 1; i < m; i++){
@@ -252,14 +244,14 @@ void OPT_ALGO::parallel_owlqn(){
     for(int i = 1; i < m; i++){
         y_list[i] = y_list[i-1] + fea_dim; 
     }
-    for(int j = 0; j < fea_dim; j++){
-        *(local_w + j) = *(w + j);
-    }
-    f_grad(local_w, local_g);//calculate g by w(equal global w)
+
+    f_grad(w, local_g);//calculate g by w(equal global w)
     sub_gradient(local_g, local_sub_g); 
+
     if(use_list_len >= m){
         two_loop(local_sub_g, s_list, y_list, ro_list, p);
     }
+
     pthread_mutex_t mutex;
     pthread_mutex_lock(&mutex);
     for(int j = 0; j < fea_dim; j++){
@@ -290,7 +282,6 @@ void OPT_ALGO::parallel_owlqn(){
 
 void OPT_ALGO::owlqn(int proc_id, int n_procs){
     int step = 0;
-    std::cout<<proc_id<<std::endl;
     while(step < 2){
         parallel_owlqn();        
         step++;
