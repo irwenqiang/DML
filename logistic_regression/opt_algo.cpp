@@ -37,6 +37,7 @@ void OPT_ALGO::load_data(std::string data_file, std::string split_tag){
     std::ifstream fin(data_file.c_str(), std::ios::in);
     if(!fin) std::cerr<<"open error get feature number..."<<data_file<<std::endl;
     int y = 0, index = 0, value = 0;
+    
     while(getline(fin,line)){
         key_val.clear();
         feature_index.clear();
@@ -45,7 +46,7 @@ void OPT_ALGO::load_data(std::string data_file, std::string split_tag){
         label.push_back(y);
         for(int i = 1; i < feature_index.size(); i++){
             int start = 0, end = 0;
-            while((end = feature_index[i].find_first_of(split_tag, start)) != std::string::npos){
+            while((end = feature_index[i].find_first_of(":", start)) != std::string::npos){
                 if(end > start){
                     index_str = feature_index[i].substr(start, end - start);
                     index = atoi(index_str.c_str());
@@ -77,20 +78,27 @@ void OPT_ALGO::init_theta(){
     n_threads = 3;
     w = new float[fea_dim];
     next_w = new float[fea_dim];
+    global_g = new float[fea_dim];
+    global_next_g = new float[fea_dim];
+
+    global_old_loss_val = 0.0;
+    global_new_loss_val = 0.0;
+
     for(int j = 0; j < fea_dim; j++){
         *(w + j) = init_w;
         *(next_w + j) = init_w;
+        *(global_g + j) = 0.0;
+        *(global_next_g + j) = 0.0; 
     }
 }
 
-
+//----------------------------owlqn--------------------------------------------
 float OPT_ALGO::sigmoid(float x)
 {
     float sgm = 1/(1+exp(-(float)x));
     return (float)sgm;
 }
 
-//----------------------------owlqn--------------------------------------------
 float OPT_ALGO::f_val(float *para_w){
     float f = 0.0;
     for(int i = 0; i < fea_matrix.size(); i++){
@@ -220,8 +228,6 @@ void OPT_ALGO::line_search(float *local_g){
 
 void OPT_ALGO::parallel_owlqn(){
     int use_list_len = 0;
-    global_g = new float[fea_dim];
-    global_next_g = new float[fea_dim];
     
     float *local_g = new float[fea_dim];
     float *local_sub_g = new float[fea_dim];
@@ -231,7 +237,7 @@ void OPT_ALGO::parallel_owlqn(){
     float *ro_list = new float[fea_dim];
     /*
     for(int i = 0; i < fea_dim; i++){
-        std::cout<<*(g+i);
+        std::cout<<*(local_g+i);
     }
     std::cout<<std::endl;
     */
@@ -266,7 +272,6 @@ void OPT_ALGO::parallel_owlqn(){
     //local_g store the gradient of global
     MPI_Allreduce(global_g, local_g, 1, MPI_FLOAT, MPI_SUM, MPI_COMM_WORLD);
     line_search(local_g);
-    //pthread_mutex_unlock(&mutex);
     //update slist
     cblas_daxpy(fea_dim, -1, (double*)w, 1, (double*)next_w, 1);
     cblas_dcopy(fea_dim, (double*)next_w, 1, (double*)s_list[use_list_len], 1);
