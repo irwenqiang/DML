@@ -33,7 +33,6 @@ std::vector<std::string> OPT_ALGO::split_line(std::string split_tag){
 }
 
 void OPT_ALGO::get_feature_struct(std::vector<std::string> feature_index){
-    int index = 0, value = 0;
     for(int i = 1; i < feature_index.size(); i++){
 	int start = 0, end = 0;
 	while((end = feature_index[i].find_first_of(":", start)) != std::string::npos){
@@ -57,7 +56,6 @@ void OPT_ALGO::get_feature_struct(std::vector<std::string> feature_index){
 void OPT_ALGO::load_data(std::string data_file, std::string split_tag){
     std::ifstream fin(data_file.c_str(), std::ios::in);
     if(!fin) std::cerr<<"open error get feature number..."<<data_file<<std::endl;
-
     int y = 0;
     while(getline(fin,line)){
         key_val.clear();
@@ -66,6 +64,7 @@ void OPT_ALGO::load_data(std::string data_file, std::string split_tag){
         feature_index = split_line(split_tag);
         y = atof(feature_index[0].c_str());
         label.push_back(y);
+
         get_feature_struct(feature_index);
         fea_matrix.push_back(key_val);
     }
@@ -80,6 +79,7 @@ void OPT_ALGO::init_theta(){
     c = 1.0;
     m = 6;
     n_threads = 3;
+
     w = new float[fea_dim];
     next_w = new float[fea_dim];
     global_g = new float[fea_dim];
@@ -104,7 +104,7 @@ float OPT_ALGO::sigmoid(float x)
     return (float)sgm;
 }
 
-float OPT_ALGO::f_val(float *para_w){
+float OPT_ALGO::loss_function_value(float *para_w){
     float f = 0.0;
     for(int i = 0; i < fea_matrix.size(); i++){
         float x = 0.0;
@@ -119,7 +119,7 @@ float OPT_ALGO::f_val(float *para_w){
     return f;
 }
 
-void OPT_ALGO::f_grad(float *para_w, float *para_g){
+void OPT_ALGO::loss_function_gradient(float *para_w, float *para_g){
     float f = 0.0;
     for(int i = 0; i < fea_matrix.size(); i++){
         float x = 0.0, value = 0.0;
@@ -138,7 +138,7 @@ void OPT_ALGO::f_grad(float *para_w, float *para_g){
     }
 }
 
-void OPT_ALGO::sub_gradient(float * local_g, float *local_sub_g){
+void OPT_ALGO::loss_function_subgradient(float * local_g, float *local_sub_g){
     if(c == 0.0){
         for(int j = 0; j < fea_dim; j++){
             *(local_sub_g + j) = -1 * *(local_g + j);
@@ -194,11 +194,13 @@ void OPT_ALGO::line_search(float *local_g){
     float alpha = 1.0;
     float beta = 1e-4;
     float backoff = 0.5;
+    float old_loss_val = 0.0, new_loss_val = 0.0;
+    float local_old_loss_val = 0.0, local_new_loss_val = 0.0;
     while(true){
-        float old_loss_val = f_val(w);//cal loss value per thread
-
-        float local_old_loss_val = 0.0;
-        float local_new_loss_val = 0.0;
+        //for(int j = 0; j < fea_dim; j++){
+          //  local_theta[j] = next_theta[j];
+        // }
+        old_loss_val = loss_function_value(w);//cal loss value per thread
 
         pthread_mutex_t mutex;
         pthread_mutex_lock(&mutex);
@@ -206,17 +208,20 @@ void OPT_ALGO::line_search(float *local_g){
         pthread_mutex_unlock(&mutex); 
 
         MPI_Allreduce(&global_old_loss_val, &local_old_loss_val, 1, MPI_FLOAT, MPI_SUM, MPI_COMM_WORLD);
+
         for(int j = 0; j < fea_dim; j++){
             *(next_w + j) = *(w + j) + alpha * *(local_g + j);//local_g equal all nodes g
         }
         fix_dir(w, next_w);//orthant limited
-        float new_loss_val = f_val(next_w);//cal new loss per thread
+        new_loss_val = loss_function_value(next_w);//cal new loss per thread
 
         pthread_mutex_lock(&mutex);
         global_new_loss_val += new_loss_val;//sum all threads loss value
         pthread_mutex_unlock(&mutex);
+
         MPI_Allreduce(&global_new_loss_val, &local_new_loss_val, 1, MPI_FLOAT, MPI_SUM, MPI_COMM_WORLD);//sum all nodes loss.
-        f_grad(next_w, global_next_g);
+        loss_function_gradient(next_w, global_next_g);
+
         if(local_new_loss_val <= local_old_loss_val + beta * cblas_ddot(fea_dim, (double*)local_g, 1, (double*)global_next_g, 1)){
             break;
         }
@@ -231,6 +236,12 @@ void OPT_ALGO::parallel_owlqn(){
     float *local_g = new float[fea_dim];
     float *local_sub_g = new float[fea_dim];
     float *p = new float[fea_dim];
+    /*
+    for(int i = 0; i < fea_dim; i++){
+        std::cout<<*(local_g+i);
+    }
+    std::cout<<std::endl;
+    */
     float *ro_list = new float[fea_dim];
 
     float **s_list = new float*[m];
@@ -245,8 +256,8 @@ void OPT_ALGO::parallel_owlqn(){
         y_list[i] = y_list[i-1] + fea_dim; 
     }
 
-    f_grad(w, local_g);//calculate g by w(equal global w)
-    sub_gradient(local_g, local_sub_g); 
+    loss_function_gradient(w, local_g);//calculate gradient of f(w)equal global w)
+    loss_function_subgradient(local_g, local_sub_g); 
 
     if(use_list_len >= m){
         two_loop(local_sub_g, s_list, y_list, ro_list, p);
@@ -282,6 +293,7 @@ void OPT_ALGO::parallel_owlqn(){
 
 void OPT_ALGO::owlqn(int proc_id, int n_procs){
     int step = 0;
+    std::cout<<proc_id<<std::endl;
     while(step < 2){
         parallel_owlqn();        
         step++;
