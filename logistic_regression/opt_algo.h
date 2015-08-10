@@ -29,13 +29,7 @@ public:
     //call by threads 
     void owlqn(int proc_id, int n_procs);
 
-    void f_grad(float *para_w, float *para_g);
-    float sigmoid(float x);
-    void sub_gradient(float *local_g, float *local_sub_g);
-    void two_loop(float *sub_g, float **s_list, float **y_list, float *ro_list, float *p);
     void fix_dir(float *w, float *next_w);
-    void line_search(float *local_g);
-    float f_val(float *w);
     //shared by multithreads
     std::vector<std::vector<sparse_feature> > fea_matrix;//feature matrix shared by all threads
     std::vector<float> label;//label of instance shared by all threads
@@ -54,6 +48,12 @@ private:
     std::vector<std::string> split_line(std::string split_tag); 
     void get_feature_struct(std::vector<std::string> feature_index);
     void parallel_owlqn();
+    void loss_function_gradient(float *para_w, float *para_g);
+    void loss_function_subgradient(float *local_g, float *local_sub_g);
+    void two_loop(float *sub_g, float **s_list, float **y_list, float *ro_list, float *p);
+    void line_search(float *local_g);
+    float loss_function_value(float *w);
+    float sigmoid(float x);
 
     std::string line;
     std::vector<std::string> tmp_vec; 
@@ -61,6 +61,6 @@ private:
     std::string index_str;
     sparse_feature sf;
     std::vector<sparse_feature> key_val;
-
+    int index, value;
 };
 #endif

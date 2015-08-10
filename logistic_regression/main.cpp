@@ -8,13 +8,13 @@
 
 struct ThreadParam{
     OPT_ALGO *opt;
-    int proc_id;
-    int n_procs;
+    int process_id;
+    int n_process;
 };
 
 void *opt_algo(void *arg){
    ThreadParam *args = (ThreadParam*)arg;
-   args->opt->owlqn(args->proc_id, args->n_procs); 
+   args->opt->owlqn(args->process_id, args->n_process); 
 }
 
 int main(int argc,char* argv[]){  
@@ -24,19 +24,18 @@ int main(int argc,char* argv[]){
     MPI_Comm_rank(MPI_COMM_WORLD,&myid);
     MPI_Comm_size(MPI_COMM_WORLD,&numprocs);
     
-    OPT_ALGO opt;
-
     std::string train_data_file = "./data/traindata.txt";
     std::string test_data_file = "./data/testdata.txt";
     std::string split_tag = "\t";
 
     //call by main thread
+    OPT_ALGO opt;
     opt.load_data(train_data_file, split_tag);
     opt.cal_fea_dim();
     MPI_Bcast(&opt.fea_dim, 1, MPI_INT, 0, MPI_COMM_WORLD);
     opt.init_theta();
 
-    //pthread start
+    //multithread start
     std::vector<ThreadParam> params;
     std::vector<pthread_t> threads;
     for(int i = 0; i < opt.n_threads; i++){//construct parameter
