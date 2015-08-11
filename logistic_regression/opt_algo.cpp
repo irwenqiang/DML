@@ -190,12 +190,11 @@ void OPT_ALGO::fix_dir(float *w, float *next_w){
     }
 }
 
-void OPT_ALGO::line_search(float *local_g){
+void OPT_ALGO::line_search(float *param_g){
     float alpha = 1.0;
     float beta = 1e-4;
     float backoff = 0.5;
     float old_loss_val = 0.0, new_loss_val = 0.0;
-    float local_old_loss_val = 0.0, local_new_loss_val = 0.0;
     while(true){
         //for(int j = 0; j < fea_dim; j++){
           //  local_theta[j] = next_theta[j];
@@ -207,10 +206,10 @@ void OPT_ALGO::line_search(float *local_g){
         global_old_loss_val += old_loss_val;//add old loss value of all threads
         pthread_mutex_unlock(&mutex); 
 
-        MPI_Allreduce(&global_old_loss_val, &local_old_loss_val, 1, MPI_FLOAT, MPI_SUM, MPI_COMM_WORLD);
+        MPI_Allreduce(&global_old_loss_val, &all_nodes_old_loss_val, 1, MPI_FLOAT, MPI_SUM, MPI_COMM_WORLD);
 
         for(int j = 0; j < fea_dim; j++){
-            *(next_w + j) = *(w + j) + alpha * *(local_g + j);//local_g equal all nodes g
+            *(next_w + j) = *(w + j) + alpha * *(param_g + j);//local_g equal all nodes g
         }
         fix_dir(w, next_w);//orthant limited
         new_loss_val = loss_function_value(next_w);//cal new loss per thread
@@ -219,10 +218,10 @@ void OPT_ALGO::line_search(float *local_g){
         global_new_loss_val += new_loss_val;//sum all threads loss value
         pthread_mutex_unlock(&mutex);
 
-        MPI_Allreduce(&global_new_loss_val, &local_new_loss_val, 1, MPI_FLOAT, MPI_SUM, MPI_COMM_WORLD);//sum all nodes loss.
+        MPI_Allreduce(&global_new_loss_val, &all_nodes_new_loss_val, 1, MPI_FLOAT, MPI_SUM, MPI_COMM_WORLD);//sum all nodes loss.
         loss_function_gradient(next_w, global_next_g);
 
-        if(local_new_loss_val <= local_old_loss_val + beta * cblas_ddot(fea_dim, (double*)local_g, 1, (double*)global_next_g, 1)){
+        if(all_nodes_new_loss_val <= all_nodes_old_loss_val + beta * cblas_ddot(fea_dim, (double*)param_g, 1, (double*)global_next_g, 1)){
             break;
         }
         alpha *= backoff;
@@ -258,7 +257,7 @@ void OPT_ALGO::parallel_owlqn(){
 
     loss_function_gradient(w, local_g);//calculate gradient of f(w)equal global w)
     loss_function_subgradient(local_g, local_sub_g); 
-
+    //should add code update multithread and all nodes sub_g to global_sub_g
     if(use_list_len >= m){
         two_loop(local_sub_g, s_list, y_list, ro_list, p);
     }
@@ -273,8 +272,10 @@ void OPT_ALGO::parallel_owlqn(){
         *(global_g + j) /= n_threads;
     }
     //local_g store the gradient of global
-    MPI_Allreduce(global_g, local_g, 1, MPI_FLOAT, MPI_SUM, MPI_COMM_WORLD);
-    line_search(local_g);
+    for(int j = 0; j < fea_dim; j++) 
+        *(all_nodes_global_g + j) = 0.0;
+    MPI_Allreduce(global_g, all_nodes_global_g, 1, MPI_FLOAT, MPI_SUM, MPI_COMM_WORLD);
+    line_search(all_nodes_global_g);
     //update slist
     cblas_daxpy(fea_dim, -1, (double*)w, 1, (double*)next_w, 1);
     cblas_dcopy(fea_dim, (double*)next_w, 1, (double*)s_list[use_list_len], 1);
@@ -293,7 +294,6 @@ void OPT_ALGO::parallel_owlqn(){
 
 void OPT_ALGO::owlqn(int proc_id, int n_procs){
     int step = 0;
-    std::cout<<proc_id<<std::endl;
     while(step < 2){
         parallel_owlqn();        
         step++;
