@@ -4,10 +4,10 @@
 #include <stdlib.h>
 #include <time.h>
 #include <iomanip>
-#include <pthread.h>
 
 struct ThreadParam{
     OPT_ALGO *opt;
+    pid_t main_thread_id;
     int process_id;
     int n_process;
 };
@@ -42,11 +42,13 @@ int main(int argc,char* argv[]){
         ThreadParam param = {&opt, myid, numprocs};
         params.push_back(param);
     } 
+    pid_t main_thread_id;
+    main_thread_id = getpid();
     for(int i = 0; i < params.size(); i++){
-        pthread_t thread;
-        int ret = pthread_create(&thread, NULL, &opt_algo, (void*)&(params[i])); 
+        pthread_t thread_id;
+        int ret = pthread_create(&thread_id, NULL, &opt_algo, (void*)&(params[i])); 
         if(ret != 0) std::cout<<"process "<<i<<"failed(create thread faild.)"<<std::endl;
-        else threads.push_back(thread);
+        else threads.push_back(thread_id);
             
     }
     for(int i = 0; i < threads.size(); i++){//join threads function

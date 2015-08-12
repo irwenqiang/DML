@@ -46,6 +46,7 @@ public:
     float all_nodes_old_loss_val;
     float global_new_loss_val;//loss value of loss function when arrive new w
     float all_nodes_new_loss_val;
+    pid_t main_thread_id;
 
 private:
     std::vector<std::string> split_line(std::string split_tag); 
