@@ -236,7 +236,7 @@ void OPT_ALGO::line_search(float *param_g){
     }
 }
 
-void OPT_ALGO::parallel_owlqn(){
+void OPT_ALGO::parallel_owlqn(float* ro_list, float** s_list, float** y_list){
     //define and initial local parameters
     int use_list_len = 0;
     float *local_g = new float[fea_dim];//single thread gradient
@@ -248,20 +248,6 @@ void OPT_ALGO::parallel_owlqn(){
     }
     std::cout<<std::endl;
     */
-    float *ro_list = new float[fea_dim];
-
-    float **s_list = new float*[m];
-    s_list[0] = new float[m * fea_dim];
-    for(int i = 1; i < m; i++){
-        s_list[i] = s_list[i-1] + fea_dim; 
-    }
-    
-    float **y_list = new float* [m];
-    y_list[0] = new float[m * fea_dim];
-    for(int i = 1; i < m; i++){
-        y_list[i] = y_list[i-1] + fea_dim; 
-    }
-
     loss_function_gradient(w, local_g);//calculate gradient of loss by global w)
     loss_function_subgradient(local_g, local_sub_g); 
     //should add code update multithread and all nodes sub_g to global_sub_g
@@ -305,9 +291,23 @@ void OPT_ALGO::parallel_owlqn(){
 }
 
 void OPT_ALGO::owlqn(int proc_id, int n_procs){
-    int step = 0;
+    float *ro_list = new float[fea_dim];
+
+    float **s_list = new float*[m];
+    s_list[0] = new float[m * fea_dim];
+    for(int i = 1; i < m; i++){
+        s_list[i] = s_list[i-1] + fea_dim; 
+    }
+    
+    float **y_list = new float* [m];
+    y_list[0] = new float[m * fea_dim];
+    for(int i = 1; i < m; i++){
+        y_list[i] = y_list[i-1] + fea_dim; 
+    }
+
+   int step = 0;
     while(step < 2){
-        parallel_owlqn();        
+        parallel_owlqn(ro_list, s_list, y_list);        
         step++;
     }
 }
