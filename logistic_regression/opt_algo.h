@@ -29,7 +29,6 @@ public:
     //call by threads 
     void owlqn(int proc_id, int n_procs);
 
-    void fix_dir(float *w, float *next_w);
     //shared by multithreads
     std::vector<std::vector<sparse_feature> > fea_matrix;//feature matrix shared by all threads
     std::vector<float> label;//label of instance shared by all threads
@@ -51,13 +50,14 @@ public:
 private:
     std::vector<std::string> split_line(std::string split_tag); 
     void get_feature_struct(std::vector<std::string> feature_index);
-    void parallel_owlqn();
+    void parallel_owlqn(float* ro_list, float** s_list, float** y_list);
     void loss_function_gradient(float *para_w, float *para_g);
     void loss_function_subgradient(float *local_g, float *local_sub_g);
     void two_loop(float *sub_g, float **s_list, float **y_list, float *ro_list, float *p);
     void line_search(float *local_g);
     float loss_function_value(float *w);
     float sigmoid(float x);
+    void fix_dir(float *w, float *next_w);
 
     std::string line;
     std::vector<std::string> tmp_vec; 
