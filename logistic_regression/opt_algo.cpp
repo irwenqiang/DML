@@ -168,7 +168,7 @@ void OPT_ALGO::two_loop(float *local_sub_g, float **s_list, float **y_list, floa
     float *q = new float[fea_dim];
     float *alpha = new float[m]; 
     cblas_dcopy(fea_dim, (double*)local_sub_g, 1, (double*)q, 1);
-    for(int loop = m; loop >= 0; loop--){
+    for(int loop = m; loop > 0; loop--){
         ro_list[loop] = cblas_ddot(fea_dim, (double*)(&(*y_list)[loop]), 1, (double*)(&(*s_list)[loop]), 1);
         alpha[loop] = cblas_ddot(fea_dim, (double*)(&(*s_list)[loop]), 1, (double*)q, 1)/ro_list[loop];
         cblas_daxpy(fea_dim, -1 * alpha[loop], (double*)(&(*y_list)[loop]), 1, (double*)q, 1);
@@ -267,39 +267,38 @@ void OPT_ALGO::parallel_owlqn(){
     //should add code update multithread and all nodes sub_g to global_sub_g
     if(use_list_len >= m){
         two_loop(local_sub_g, s_list, y_list, ro_list, p);
-    }
+    }//p is every thread search direction
 
     pthread_mutex_t mutex;
     pthread_mutex_lock(&mutex);
     for(int j = 0; j < fea_dim; j++){
-        *(global_g + j) += *(p + j);
+        *(global_g + j) += *(p + j);//update global direction of all threads
     }
     pthread_mutex_unlock(&mutex);
     for(int j = 0; j < fea_dim; j++){//must be pay attention
         *(global_g + j) /= n_threads;
     }
-    //local_g store the gradient of global
     pid_t local_thread_id;
     local_thread_id = getpid();
     if(local_thread_id == main_thread_id){
         for(int j = 0; j < fea_dim; j++){ 
             *(all_nodes_global_g + j) = 0.0;
         }
-        MPI_Allreduce(global_g, all_nodes_global_g, 1, MPI_FLOAT, MPI_SUM, MPI_COMM_WORLD);
+        MPI_Allreduce(global_g, all_nodes_global_g, 1, MPI_FLOAT, MPI_SUM, MPI_COMM_WORLD);//all_nodes_global_g store shared sum of every nodes search direction
     }
-    line_search(all_nodes_global_g);
+    line_search(all_nodes_global_g);//use global search direction to search
     //update slist
     cblas_daxpy(fea_dim, -1, (double*)w, 1, (double*)next_w, 1);
-    cblas_dcopy(fea_dim, (double*)next_w, 1, (double*)s_list[use_list_len], 1);
+    cblas_dcopy(fea_dim, (double*)next_w, 1, (double*)s_list[(m - use_list_len) % m], 1);
     //update ylist
     cblas_daxpy(fea_dim, -1, (double*)global_g, 1, (double*)global_next_g, 1); 
-    cblas_dcopy(fea_dim, (double*)global_next_g, 1, (double*)y_list[use_list_len], 1);
+    cblas_dcopy(fea_dim, (double*)global_next_g, 1, (double*)y_list[(m - use_list_len) % m], 1);
 
     use_list_len++;
     if(use_list_len > m){
         for(int j = 0; j < fea_dim; j++){
-            *(*(s_list + (use_list_len - m) % m) + j) = 0.0;
-            *(*(y_list + (use_list_len - m) % m) + j) = 0.0;        
+            *(*(s_list + abs(m - use_list_len) % m) + j) = 0.0;
+            *(*(y_list + abs(m - use_list_len) % m) + j) = 0.0;        
         }
     }
     cblas_dcopy(fea_dim, (double*)next_w, 1, (double*)w, 1);
