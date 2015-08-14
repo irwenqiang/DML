@@ -18,9 +18,8 @@ predict.o:predict.cpp
 	mpicxx -I /opt/OpenBLAS/include/ -c predict.cpp
 
 #make train uttest
-train_ut:train_uttest.o
-	#mpicxx -o train_ut train_uttest.o -L/home/wangxiaoshu/document/gtest/lib -lgtest
-	mpicxx -o train_ut train_uttest.o -L ./lib-lgtest
+train_ut:train_uttest.o opt_algo.o
+	mpicxx -o train_ut train_uttest.o opt_algo.o -L /opt/OpenBLAS/lib -lopenblas -lpthread -L ./lib -lgtest
 
 train_uttest.o: train_uttest.cpp
 	mpicxx  -I ./include -c train_uttest.cpp
