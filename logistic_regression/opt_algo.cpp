@@ -175,10 +175,10 @@ void OPT_ALGO::two_loop(float *local_sub_g, float **s_list, float **y_list, floa
     }
     float *last_y = new float[fea_dim];
     for(int j = 0; j < fea_dim; j++){
-        last_y[j] = *((*y_list + m-1) + j);
+        last_y[j] = *((*y_list + m-2) + j);
     }
     float ydoty = cblas_ddot(fea_dim, (double*)last_y, 1, (double*)last_y, 1);
-    float gamma = ro_list[m-1]/ydoty;
+    float gamma = ro_list[m-2]/ydoty;
     cblas_sscal(fea_dim, gamma,(float*)p, 1);
     for(int loop = 0; loop < m; loop++){
         float beta = cblas_ddot(fea_dim, (double*)(&(*y_list)[loop]), 1, (double*)p, 1)/ro_list[loop];
@@ -199,9 +199,6 @@ void OPT_ALGO::line_search(float *param_g){
     float backoff = 0.5;
     float old_loss_val = 0.0, new_loss_val = 0.0;
     while(true){
-        //for(int j = 0; j < fea_dim; j++){
-          //  local_theta[j] = next_theta[j];
-        // }
         old_loss_val = loss_function_value(w);//cal loss value per thread
 
         pthread_mutex_t mutex;
@@ -236,18 +233,11 @@ void OPT_ALGO::line_search(float *param_g){
     }
 }
 
-void OPT_ALGO::parallel_owlqn(float* ro_list, float** s_list, float** y_list){
+void OPT_ALGO::parallel_owlqn(int use_list_len, float* ro_list, float** s_list, float** y_list){
     //define and initial local parameters
-    int use_list_len = 0;
     float *local_g = new float[fea_dim];//single thread gradient
     float *local_sub_g = new float[fea_dim];//single thread subgradient
     float *p = new float[fea_dim];//single thread search direction.after two loop
-    /*
-    for(int i = 0; i < fea_dim; i++){
-        std::cout<<*(local_g+i);
-    }
-    std::cout<<std::endl;
-    */
     loss_function_gradient(w, local_g);//calculate gradient of loss by global w)
     loss_function_subgradient(local_g, local_sub_g); 
     //should add code update multithread and all nodes sub_g to global_sub_g
@@ -305,9 +295,11 @@ void OPT_ALGO::owlqn(int proc_id, int n_procs){
         y_list[i] = y_list[i-1] + fea_dim; 
     }
 
-   int step = 0;
-    while(step < 2){
-        parallel_owlqn(ro_list, s_list, y_list);        
+    int use_list_len = 0;
+    int step = 0;
+    std::cout<<"111"<<std::endl;
+    while(step < 3){
+        parallel_owlqn(use_list_len, ro_list, s_list, y_list);        
         step++;
     }
 }

@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <iomanip>
+#include "gtest/gtest.h"
 
 struct ThreadParam{
     OPT_ALGO *opt;
