@@ -18,17 +18,19 @@ struct sparse_feature{
 
 class OPT_ALGO{
 public:
-    OPT_ALGO();
-    ~OPT_ALGO();
-
-    //call by main thread
-    void load_data(std::string train_data_file, std::string split_tag);
-    void cal_fea_dim();
-    void init_theta();
-
+    OPT_ALGO(const std::string& train_data_file, const std::string& split_tag) {
+		this->load_data(train_data_file, split_tag);
+		this->cal_fea_dim();
+		this->init_theta();
+	}
+    virtual ~OPT_ALGO() {
+		this->free_theta();
+	}
+public:
     //call by threads 
     void owlqn(int proc_id, int n_procs);
-    float sigmoid(float x);
+
+public:
     //shared by multithreads
     std::vector<std::vector<sparse_feature> > fea_matrix;//feature matrix shared by all threads
     std::vector<float> label;//label of instance shared by all threads
@@ -48,16 +50,21 @@ public:
     pid_t main_thread_id;
 
 private:
-    std::vector<std::string> split_line(std::string split_tag); 
-    void get_feature_struct(std::vector<std::string> feature_index);
+    //call by main thread
+    void load_data(const std::string& train_data_file, const std::string& split_tag);
+    void cal_fea_dim();
+    void init_theta();
+	void free_theta();
+	void split_line(const std::string& split_tag, std::vector<std::string>& jobVec);
+    void get_feature_struct(const std::vector<std::string>& feature_index);
     void parallel_owlqn(int use_list_len, float* ro_list, float** s_list, float** y_list);
-    void loss_function_gradient(float *para_w, float *para_g);
-    void loss_function_subgradient(float *local_g, float *local_sub_g);
+    void loss_function_gradient(float *para_w, float *para_g) const;
+    void loss_function_subgradient(float *local_g, float *local_sub_g) const;
     void two_loop(float *sub_g, float **s_list, float **y_list, float *ro_list, float *p);
     void line_search(float *local_g);
-    float loss_function_value(float *w);
-    //float sigmoid(float x);
-    void fix_dir(float *w, float *next_w);
+    float loss_function_value(float *w) const;
+    float sigmoid(float x) const;
+    void fix_dir(float *w, float *next_w) const;
 
     std::string line;
     std::vector<std::string> tmp_vec; 
