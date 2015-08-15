@@ -3,7 +3,7 @@
 #include <ctime>
 #include <iomanip>
 #include "gtest/gtest.h"
-#include "opt_algo.h"
+#include "include/opt_algo.h"
 #include "mpi.h"
 
 struct ThreadParam{
