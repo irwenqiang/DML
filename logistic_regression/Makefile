@@ -1,28 +1,33 @@
 #!/bin/bash
 
-SRCPATH=-I./src -I./include 
+SRCPATH=-I . -I ./src -I ./include -I /opt/OpenBLAS/include/ -L/opt/OpenBLAS/lib
+CC=mpicxx
+OPT=-g -Wall --std=c++11 -O3
+VPATH=./src/
 #train code
 train:main.o opt_algo.o 
-	mpicxx -g -o train main.o opt_algo.o -L/opt/OpenBLAS/lib -lopenblas -lpthread --std=c++11
+	mpicxx ${OPT} -o train main.o opt_algo.o ${SRCPATH} -lopenblas -lpthread
 
 main.o: main.cpp 
-	mpicxx -I /opt/OpenBLAS/include -I ./include -c main.cpp 
+	mpicxx ${OPT} ${SRCPATH} -c main.cpp
 
 opt_algo.o: opt_algo.cpp
-	mpicxx -I /opt/OpenBLAS/include/ -I ./include -c opt_algo.cpp --std=c++11
+	mpicxx ${OPT} ${SRCPATH} -c ./src/opt_algo.cpp
 
 #predict code
 predict:predict.o
-	mpicxx -g -o predict -lpthread -L/opt/OpenBLAS/lib -lopenblas predict.o
+	mpicxx ${OPT} -o predict -lpthread ${SRCPATH} -lopenblas predict.o
 
 predict.o:predict.cpp
-	mpicxx -I /opt/OpenBLAS/include/ -c predict.cpp
+	mpicxx ${OPT} ${SRCPATH} -c ./src/predict.cpp
 
 #make train uttest
 train_ut:train_uttest.o opt_algo.o
-	mpicxx -o train_ut train_uttest.o opt_algo.o -L /opt/OpenBLAS/lib -lopenblas -lpthread -L ./lib -lgtest
+	mpicxx ${OPT} -o train_ut train_uttest.o opt_algo.o -L /opt/OpenBLAS/lib -lopenblas -lpthread -L ./lib -lgtest
 
 train_uttest.o: train_uttest.cpp
-	mpicxx  -I ./include -c train_uttest.cpp
+	mpicxx ${OPT} -c ${SRCPATH} ./src/train_uttest.cpp
+.PHONY:clean
+	clean
 clean:
 	rm -f *~ train predict *.o
