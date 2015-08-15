@@ -1,14 +1,15 @@
 #!/bin/bash
 
+SRCPATH=-I./src -I./include 
 #train code
 train:main.o opt_algo.o 
-	mpicxx -o train main.o opt_algo.o -L/opt/OpenBLAS/lib -lopenblas -lpthread
+	mpicxx -g -o train main.o opt_algo.o -L/opt/OpenBLAS/lib -lopenblas -lpthread --std=c++11
 
 main.o: main.cpp 
-	mpicxx -I /opt/OpenBLAS/include -I ./include -c main.cpp
+	mpicxx -I /opt/OpenBLAS/include -I ./include -c main.cpp 
 
-opt_algo.o: opt_algo.cpp  
-	mpicxx -I /opt/OpenBLAS/include/ -I ./include -c opt_algo.cpp
+opt_algo.o: opt_algo.cpp
+	mpicxx -I /opt/OpenBLAS/include/ -I ./include -c opt_algo.cpp --std=c++11
 
 #predict code
 predict:predict.o
