@@ -8,7 +8,6 @@
 
 struct ThreadParam{
     OPT_ALGO *opt;
-    pid_t main_thread_id;
     int process_id;
     int n_process;
 };
