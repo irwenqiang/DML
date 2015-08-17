@@ -24,4 +24,4 @@ train_ut: train_uttest.o opt_algo.o
 train_uttest.o: src/train_uttest.cpp
 	mpicxx  -I ./include -c src/train_uttest.cpp
 clean:
-	rm -f *~ train predict *.o
+	rm -f *~ train predict train_ut *.o
