@@ -24,13 +24,12 @@ int main(int argc,char* argv[]){
     MPI_Comm_rank(MPI_COMM_WORLD,&myid);
     MPI_Comm_size(MPI_COMM_WORLD,&numprocs);
     
-    std::string train_data_file = "./data/traindata.txt";
-    std::string test_data_file = "./data/testdata.txt";
+    std::string train_data_file = "./data/train.txt";
+    std::string test_data_file = "./data/test.txt";
     std::string split_tag = "\t";
     //call by main thread
     OPT_ALGO opt;
     opt.load_data(train_data_file, split_tag);
-    opt.cal_fea_dim();
     MPI_Bcast(&opt.fea_dim, 1, MPI_INT, 0, MPI_COMM_WORLD);
     opt.init_theta();
     //multithread start

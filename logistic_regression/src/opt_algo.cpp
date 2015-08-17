@@ -39,6 +39,7 @@ void OPT_ALGO::get_feature_struct(std::vector<std::string> feature_index){
             if(end > start){
 	        index_str = feature_index[i].substr(start, end - start);
 	        index = atoi(index_str.c_str());
+                if(index > fea_dim) fea_dim = index + 1;
 		sf.idx = index - 1;
             }
             //beg += 1; //this code must remain,it makes me crazy two days!!!
@@ -60,19 +61,15 @@ void OPT_ALGO::load_data(std::string data_file, std::string split_tag){
     while(getline(fin,line)){
         key_val.clear();
         feature_index.clear();
-
+        //return id:value, .e.g 3:1, 4:1
         feature_index = split_line(split_tag);
         y = atof(feature_index[0].c_str());
         label.push_back(y);
-
+        //3:1 as input
         get_feature_struct(feature_index);
         fea_matrix.push_back(key_val);
     }
     fin.close();
-}
-
-void OPT_ALGO::cal_fea_dim(){
-    fea_dim = fea_matrix.size();
 }
 
 void OPT_ALGO::init_theta(){
