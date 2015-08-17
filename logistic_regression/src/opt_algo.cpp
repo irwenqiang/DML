@@ -248,17 +248,19 @@ void OPT_ALGO::parallel_owlqn(int use_list_len, float* ro_list, float** s_list, 
         *(global_g + j) += *(p + j);//update global direction of all threads
     }
     pthread_mutex_unlock(&mutex);
-    for(int j = 0; j < fea_dim; j++){//must be pay attention
-        *(global_g + j) /= n_threads;
-    }
+
     pid_t local_thread_id;
     local_thread_id = getpid();
     if(local_thread_id == main_thread_id){
         for(int j = 0; j < fea_dim; j++){ 
             *(all_nodes_global_g + j) = 0.0;
         }
+        for(int j = 0; j < fea_dim; j++){//must be pay attention
+            *(global_g + j) /= n_threads;
+        }   
         MPI_Allreduce(global_g, all_nodes_global_g, 1, MPI_FLOAT, MPI_SUM, MPI_COMM_WORLD);//all_nodes_global_g store shared sum of every nodes search direction
     }
+
     line_search(all_nodes_global_g);//use global search direction to search
     //update slist
     cblas_daxpy(fea_dim, -1, (double*)w, 1, (double*)next_w, 1);
