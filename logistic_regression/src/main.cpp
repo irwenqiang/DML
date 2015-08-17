@@ -27,14 +27,12 @@ int main(int argc,char* argv[]){
     std::string train_data_file = "./data/traindata.txt";
     std::string test_data_file = "./data/testdata.txt";
     std::string split_tag = "\t";
-
     //call by main thread
     OPT_ALGO opt;
     opt.load_data(train_data_file, split_tag);
     opt.cal_fea_dim();
     MPI_Bcast(&opt.fea_dim, 1, MPI_INT, 0, MPI_COMM_WORLD);
     opt.init_theta();
-
     //multithread start
     std::vector<ThreadParam> params;
     std::vector<pthread_t> threads;
