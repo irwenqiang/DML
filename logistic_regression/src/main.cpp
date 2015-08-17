@@ -35,15 +35,14 @@ int main(int argc,char* argv[]){
     MPI_Bcast(&opt.fea_dim, 1, MPI_INT, root, MPI_COMM_WORLD);
     std::cout<<opt.fea_dim<<std::endl;
     opt.init_theta();
-    //multithread start
+
     std::vector<ThreadParam> params;
     std::vector<pthread_t> threads;
     for(int i = 0; i < opt.n_threads; i++){//construct parameter
         ThreadParam param = {&opt, myid, numprocs};
         params.push_back(param);
     } 
-    pid_t main_thread_id;
-    main_thread_id = getpid();
+    //multithread start
     for(int i = 0; i < params.size(); i++){
         pthread_t thread_id;
         int ret = pthread_create(&thread_id, NULL, &opt_algo, (void*)&(params[i])); 
