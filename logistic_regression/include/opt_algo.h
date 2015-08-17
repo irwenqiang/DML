@@ -51,7 +51,7 @@ private:
     void parallel_owlqn(int use_list_len, float* ro_list, float** s_list, float** y_list);
     void loss_function_gradient(float *para_w, float *para_g);
     void loss_function_subgradient(float *local_g, float *local_sub_g);
-    void two_loop(float *sub_g, float **s_list, float **y_list, float *ro_list, float *p);
+    void two_loop(int use_list_len, float *sub_g, float **s_list, float **y_list, float *ro_list, float *p);
     void line_search(float *local_g);
     float loss_function_value(float *w);
     float sigmoid(float x);

@@ -208,8 +208,8 @@ void OPT_ALGO::line_search(float *param_g){
     }
 }
 
-void OPT_ALGO::two_loop(float *local_sub_g, float **s_list, float **y_list, float *ro_list, float *p){
-    float *q = new float[fea_dim];
+void OPT_ALGO::two_loop(int use_list_len, float *local_sub_g, float **s_list, float **y_list, float *ro_list, float *p){
+    float *q = new float[fea_dim];//local variable
     float *alpha = new float[m]; 
     cblas_dcopy(fea_dim, (double*)local_sub_g, 1, (double*)q, 1);
     for(int loop = m; loop > 0; loop--){
@@ -238,7 +238,7 @@ void OPT_ALGO::parallel_owlqn(int use_list_len, float* ro_list, float** s_list, 
     loss_function_gradient(w, local_g);//calculate gradient of loss by global w)
     loss_function_subgradient(local_g, local_sub_g); 
     //should add code update multithread and all nodes sub_g to global_sub_g
-    two_loop(local_sub_g, s_list, y_list, ro_list, p);
+    two_loop(use_list_len, local_sub_g, s_list, y_list, ro_list, p);
 
     pthread_mutex_t mutex;
     pthread_mutex_lock(&mutex);
