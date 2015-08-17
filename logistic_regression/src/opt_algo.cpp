@@ -33,7 +33,7 @@ std::vector<std::string> OPT_ALGO::split_line(std::string split_tag){
 }
 
 void OPT_ALGO::get_feature_struct(std::vector<std::string> feature_index){
-    for(int i = 1; i < feature_index.size(); i++){
+    for(int i = 1; i < feature_index.size(); i++){//start from index 1
 	int start = 0, end = 0;
 	while((end = feature_index[i].find_first_of(":", start)) != std::string::npos){
             if(end > start){
@@ -59,8 +59,8 @@ void OPT_ALGO::load_data(std::string data_file, std::string split_tag){
     if(!fin) std::cerr<<"open error get feature number..."<<data_file<<std::endl;
     int y = 0;
     while(getline(fin,line)){
-        key_val.clear();
         feature_index.clear();
+        key_val.clear();
         //return id:value, .e.g 3:1, 4:1
         feature_index = split_line(split_tag);
         y = atof(feature_index[0].c_str());
@@ -74,7 +74,7 @@ void OPT_ALGO::load_data(std::string data_file, std::string split_tag){
 
 void OPT_ALGO::init_theta(){
     c = 1.0;
-    m = 6;
+    m = 10;
     n_threads = 3;
 
     w = new float[fea_dim];
@@ -92,8 +92,8 @@ void OPT_ALGO::init_theta(){
     for(int j = 0; j < fea_dim; j++){
         *(w + j) = init_w;
         *(next_w + j) = init_w;
-        *(global_g + j) = 0.0;
-        *(global_next_g + j) = 0.0; 
+        *(global_g + j) = init_w;
+        *(global_next_g + j) = init_w; 
     }
 }
 
@@ -161,28 +161,6 @@ void OPT_ALGO::loss_function_subgradient(float * local_g, float *local_sub_g){
     }
 }
 
-void OPT_ALGO::two_loop(float *local_sub_g, float **s_list, float **y_list, float *ro_list, float *p){
-    float *q = new float[fea_dim];
-    float *alpha = new float[m]; 
-    cblas_dcopy(fea_dim, (double*)local_sub_g, 1, (double*)q, 1);
-    for(int loop = m; loop > 0; loop--){
-        ro_list[loop] = cblas_ddot(fea_dim, (double*)(&(*y_list)[loop]), 1, (double*)(&(*s_list)[loop]), 1);
-        alpha[loop] = cblas_ddot(fea_dim, (double*)(&(*s_list)[loop]), 1, (double*)q, 1)/ro_list[loop];
-        cblas_daxpy(fea_dim, -1 * alpha[loop], (double*)(&(*y_list)[loop]), 1, (double*)q, 1);
-    }
-    float *last_y = new float[fea_dim];
-    for(int j = 0; j < fea_dim; j++){
-        last_y[j] = *((*y_list + m-2) + j);
-    }
-    float ydoty = cblas_ddot(fea_dim, (double*)last_y, 1, (double*)last_y, 1);
-    float gamma = ro_list[m-2]/ydoty;
-    cblas_sscal(fea_dim, gamma,(float*)p, 1);
-    for(int loop = 0; loop < m; loop++){
-        float beta = cblas_ddot(fea_dim, (double*)(&(*y_list)[loop]), 1, (double*)p, 1)/ro_list[loop];
-        cblas_daxpy(fea_dim, alpha[loop] - beta, (double*)(&(*s_list)[loop]), 1, (double*)p, 1);
-    }
-}
-
 void OPT_ALGO::fix_dir(float *w, float *next_w){
     for(int j = 0; j < fea_dim; j++){
         if(*(next_w + j) * *(w + j) >=0) *(next_w + j) = 0.0;
@@ -230,6 +208,28 @@ void OPT_ALGO::line_search(float *param_g){
     }
 }
 
+void OPT_ALGO::two_loop(float *local_sub_g, float **s_list, float **y_list, float *ro_list, float *p){
+    float *q = new float[fea_dim];
+    float *alpha = new float[m]; 
+    cblas_dcopy(fea_dim, (double*)local_sub_g, 1, (double*)q, 1);
+    for(int loop = m; loop > 0; loop--){
+        ro_list[loop] = cblas_ddot(fea_dim, (double*)(&(*y_list)[loop]), 1, (double*)(&(*s_list)[loop]), 1);
+        alpha[loop] = cblas_ddot(fea_dim, (double*)(&(*s_list)[loop]), 1, (double*)q, 1)/ro_list[loop];
+        cblas_daxpy(fea_dim, -1 * alpha[loop], (double*)(&(*y_list)[loop]), 1, (double*)q, 1);
+    }
+    float *last_y = new float[fea_dim];
+    for(int j = 0; j < fea_dim; j++){
+        last_y[j] = *((*y_list + m-2) + j);
+    }
+    float ydoty = cblas_ddot(fea_dim, (double*)last_y, 1, (double*)last_y, 1);
+    float gamma = ro_list[m-2]/ydoty;
+    cblas_sscal(fea_dim, gamma,(float*)p, 1);
+    for(int loop = 0; loop < m; loop++){
+        float beta = cblas_ddot(fea_dim, (double*)(&(*y_list)[loop]), 1, (double*)p, 1)/ro_list[loop];
+        cblas_daxpy(fea_dim, alpha[loop] - beta, (double*)(&(*s_list)[loop]), 1, (double*)p, 1);
+    }
+}
+
 void OPT_ALGO::parallel_owlqn(int use_list_len, float* ro_list, float** s_list, float** y_list){
     //define and initial local parameters
     float *local_g = new float[fea_dim];//single thread gradient
@@ -238,9 +238,7 @@ void OPT_ALGO::parallel_owlqn(int use_list_len, float* ro_list, float** s_list, 
     loss_function_gradient(w, local_g);//calculate gradient of loss by global w)
     loss_function_subgradient(local_g, local_sub_g); 
     //should add code update multithread and all nodes sub_g to global_sub_g
-    if(use_list_len >= m){
-        two_loop(local_sub_g, s_list, y_list, ro_list, p);
-    }//p is every thread search direction
+    two_loop(local_sub_g, s_list, y_list, ro_list, p);
 
     pthread_mutex_t mutex;
     pthread_mutex_lock(&mutex);

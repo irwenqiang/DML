@@ -23,13 +23,14 @@ int main(int argc,char* argv[]){
     MPI_Init(&argc,&argv);
     MPI_Comm_rank(MPI_COMM_WORLD,&myid);
     MPI_Comm_size(MPI_COMM_WORLD,&numprocs);
-    
+    //exec by main thread    
     std::string train_data_file = "./data/train.txt";
     std::string test_data_file = "./data/test.txt";
     std::string split_tag = " ";
-    //call by main thread
+    
     OPT_ALGO opt;
     opt.fea_dim = 0;
+    //get label and feature matrix
     opt.load_data(train_data_file, split_tag);
     int root = 0;
     MPI_Bcast(&opt.fea_dim, 1, MPI_INT, root, MPI_COMM_WORLD);
