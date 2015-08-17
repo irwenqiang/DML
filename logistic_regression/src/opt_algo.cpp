@@ -260,7 +260,7 @@ void OPT_ALGO::parallel_owlqn(int use_list_len, float* ro_list, float** s_list, 
         }   
         MPI_Allreduce(global_g, all_nodes_global_g, 1, MPI_FLOAT, MPI_SUM, MPI_COMM_WORLD);//all_nodes_global_g store shared sum of every nodes search direction
     }
-
+    //should be synchronous all threads
     line_search(all_nodes_global_g);//use global search direction to search
     //update slist
     cblas_daxpy(fea_dim, -1, (double*)w, 1, (double*)next_w, 1);
