@@ -294,7 +294,6 @@ void OPT_ALGO::owlqn(int proc_id, int n_procs){
 
     int use_list_len = 0;
     int step = 0;
-    std::cout<<"111"<<std::endl;
     while(step < 3){
         parallel_owlqn(use_list_len, ro_list, s_list, y_list);        
         step++;
