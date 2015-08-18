@@ -233,7 +233,8 @@ void OPT_ALGO::two_loop(int use_list_len, float *local_sub_g, float **s_list, fl
         float beta = cblas_ddot(fea_dim, (double*)(&(*y_list)[m - loop]), 1, (double*)p, 1)/ro_list[m - loop];
         cblas_daxpy(fea_dim, alpha[loop] - beta, (double*)(&(*s_list)[m - loop]), 1, (double*)p, 1);
     }
-
+    delete [] alpha;
+    delete [] last_y;
 }
 
 void OPT_ALGO::parallel_owlqn(int use_list_len, float* ro_list, float** s_list, float** y_list){
