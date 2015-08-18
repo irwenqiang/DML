@@ -7,17 +7,14 @@ extern "C"{
 #include <cblas.h>
 }
 
-OPT_ALGO::OPT_ALGO()
-{
+OPT_ALGO::OPT_ALGO(){
 }
 
-OPT_ALGO::~OPT_ALGO()
-{
+OPT_ALGO::~OPT_ALGO(){
     delete [] w; 
     delete [] next_w;
     delete [] global_g;
     delete [] global_next_g;
-
 }
 
 std::vector<std::string> OPT_ALGO::split_line(std::string split_tag){
@@ -90,8 +87,13 @@ void OPT_ALGO::init_theta(){
     global_old_loss_val = 0.0;
     global_new_loss_val = 0.0;
     
-    pid_t main_thread_id;
     main_thread_id = getpid();   
+
+    sync_global_g = 3;
+    sync_s_y_list = 3;
+    sync_global_old_loss = 3;
+    sync_global_new_loss = 3;
+
  
     float init_w = 0.0;
     for(int j = 0; j < fea_dim; j++){
@@ -189,6 +191,13 @@ void OPT_ALGO::line_search(float *param_g){
         local_thread_id = getpid();
         if(local_thread_id == main_thread_id){
             MPI_Allreduce(&global_old_loss_val, &all_nodes_old_loss_val, 1, MPI_FLOAT, MPI_SUM, MPI_COMM_WORLD);
+            sync_global_old_loss--;
+        }
+        else{
+            sync_global_old_loss--;
+        }
+        while(sync_global_old_loss > 0){
+            sleep(1);
         }
         for(int j = 0; j < fea_dim; j++){
             *(next_w + j) = *(w + j) + alpha * *(param_g + j);//local_g equal all nodes g
@@ -202,6 +211,13 @@ void OPT_ALGO::line_search(float *param_g){
 
         if(local_thread_id == main_thread_id){
             MPI_Allreduce(&global_new_loss_val, &all_nodes_new_loss_val, 1, MPI_FLOAT, MPI_SUM, MPI_COMM_WORLD);//sum all nodes loss.
+            sync_global_new_loss--;
+        }
+        else{
+            sync_global_new_loss--;
+        }
+        while(sync_global_new_loss > 0){
+            sleep(1);
         }
         loss_function_gradient(next_w, global_next_g);
 
@@ -268,24 +284,40 @@ void OPT_ALGO::parallel_owlqn(int use_list_len, float* ro_list, float** s_list, 
             *(global_g + j) /= n_threads;
         }   
         MPI_Allreduce(global_g, all_nodes_global_g, 1, MPI_FLOAT, MPI_SUM, MPI_COMM_WORLD);//all_nodes_global_g store shared sum of every nodes search direction
+        sync_global_g--;
+    }
+    else{
+        sync_global_g--;
+    }
+    while(sync_global_g > 0){
+        sleep(1);
     }
     //should be synchronous all threads
     line_search(all_nodes_global_g);//use global search direction to search
     //update slist
-    cblas_daxpy(fea_dim, -1, (double*)w, 1, (double*)next_w, 1);
-    cblas_dcopy(fea_dim, (double*)next_w, 1, (double*)s_list[(m - use_list_len) % m], 1);
+    if(local_thread_id == main_thread_id){
+        cblas_daxpy(fea_dim, -1, (double*)w, 1, (double*)next_w, 1);
+        cblas_dcopy(fea_dim, (double*)next_w, 1, (double*)s_list[(m - use_list_len) % m], 1);
     //update ylist
-    cblas_daxpy(fea_dim, -1, (double*)global_g, 1, (double*)global_next_g, 1); 
-    cblas_dcopy(fea_dim, (double*)global_next_g, 1, (double*)y_list[(m - use_list_len) % m], 1);
+        cblas_daxpy(fea_dim, -1, (double*)global_g, 1, (double*)global_next_g, 1); 
+        cblas_dcopy(fea_dim, (double*)global_next_g, 1, (double*)y_list[(m - use_list_len) % m], 1);
 
-    use_list_len++;
-    if(use_list_len > m){
-        for(int j = 0; j < fea_dim; j++){
-            *(*(s_list + abs(m - use_list_len) % m) + j) = 0.0;
-            *(*(y_list + abs(m - use_list_len) % m) + j) = 0.0;        
+        use_list_len++;
+        if(use_list_len > m){
+            for(int j = 0; j < fea_dim; j++){
+                *(*(s_list + abs(m - use_list_len) % m) + j) = 0.0;
+                *(*(y_list + abs(m - use_list_len) % m) + j) = 0.0;        
+            }
         }
+        cblas_dcopy(fea_dim, (double*)next_w, 1, (double*)w, 1);
+        sync_s_y_list--;
     }
-    cblas_dcopy(fea_dim, (double*)next_w, 1, (double*)w, 1);
+    else{
+        sync_s_y_list--;
+    }
+    while(sync_s_y_list > 0){
+        sleep(1);
+    }
 }
 
 void OPT_ALGO::owlqn(int proc_id, int n_procs){
