@@ -2,21 +2,29 @@
 #include <cstdlib>
 #include <ctime>
 #include <iomanip>
+#include <thread>
+#include <atomic>
+#include <cassert>
 #include "gtest/gtest.h"
 #include "include/opt_algo.h"
 #include "mpi.h"
 
-struct ThreadParam{
+struct ThreadParam {
     OPT_ALGO *opt;
     pid_t main_thread_id;
     int process_id;
     int n_process;
 };
 
+/*
 void *opt_algo(void* arg){
    ThreadParam *args = (ThreadParam*)arg;
    args->opt->owlqn(args->process_id, args->n_process); 
    return NULL;
+}
+*/
+void optAlgo(ThreadParam* arg) {
+	arg->opt->owlqn(arg->process_id, arg->n_process);
 }
 
 int main(int argc,char* argv[]){
@@ -36,22 +44,16 @@ int main(int argc,char* argv[]){
 
     //multithread start
     std::vector<ThreadParam> params;
-    std::vector<pthread_t> threads;
-    for(int i = 0; i < opt.n_threads; i++) {//construct parameter
-        ThreadParam param = {&opt, myid, numprocs};
-        params.push_back(param);
-    } 
-    // pid_t main_thread_id;
-    // main_thread_id = getpid();
-    for(size_t i = 0; i < params.size(); i++){
-        pthread_t thread_id;
-        int ret = pthread_create(&thread_id, NULL, opt_algo, (void*)&(params[i])); 
-        if(ret != 0) std::cout<<"process "<<i<<"failed(create thread faild.)"<<std::endl;
-        else threads.push_back(thread_id);
-    }
-    for(size_t i = 0; i < threads.size(); i++){//join threads function
-        pthread_join(threads[i], 0);
-    }
+    // std::vector<pthread_t> threads;
+	std::vector<std::thread> threads;
+	
+	ThreadParam param{&opt, myid, numprocs};
+	for (int i = 0; i < opt.n_threads; ++i) {
+		threads.push_back(std::thread(optAlgo, &param));
+	}
+	for (auto& u : threads) {
+		u.join();
+	}
 
     MPI::Finalize();
     return 0;
