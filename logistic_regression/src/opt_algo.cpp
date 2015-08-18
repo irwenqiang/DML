@@ -213,22 +213,27 @@ void OPT_ALGO::two_loop(int use_list_len, float *local_sub_g, float **s_list, fl
     float *alpha = new float[m]; 
     cblas_dcopy(fea_dim, (double*)local_sub_g, 1, (double*)q, 1);
     if(use_list_len < m) m = use_list_len; 
+
     for(int loop = 1; loop <= m; ++loop){
         ro_list[loop - 1] = cblas_ddot(fea_dim, (double*)(&(*y_list)[loop - 1]), 1, (double*)(&(*s_list)[loop - 1]), 1);
         alpha[loop] = cblas_ddot(fea_dim, (double*)(&(*s_list)[loop - 1]), 1, (double*)q, 1)/ro_list[loop - 1];
         cblas_daxpy(fea_dim, -1 * alpha[loop], (double*)(&(*y_list)[loop - 1]), 1, (double*)q, 1);
     }
+    delete [] q;
     float *last_y = new float[fea_dim];
     for(int j = 0; j < fea_dim; j++){
         last_y[j] = *((*y_list + m - 1) + j);
     }
+
     float ydoty = cblas_ddot(fea_dim, (double*)last_y, 1, (double*)last_y, 1);
     float gamma = ro_list[m - 1]/ydoty;
     cblas_sscal(fea_dim, gamma,(float*)p, 1);
+
     for(int loop = m; loop >=1; --loop){
         float beta = cblas_ddot(fea_dim, (double*)(&(*y_list)[m - loop]), 1, (double*)p, 1)/ro_list[m - loop];
         cblas_daxpy(fea_dim, alpha[loop] - beta, (double*)(&(*s_list)[m - loop]), 1, (double*)p, 1);
     }
+
 }
 
 void OPT_ALGO::parallel_owlqn(int use_list_len, float* ro_list, float** s_list, float** y_list){
