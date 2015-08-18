@@ -13,6 +13,11 @@ OPT_ALGO::OPT_ALGO()
 
 OPT_ALGO::~OPT_ALGO()
 {
+    delete [] w; 
+    delete [] next_w;
+    delete [] global_g;
+    delete [] global_next_g;
+
 }
 
 std::vector<std::string> OPT_ALGO::split_line(std::string split_tag){
