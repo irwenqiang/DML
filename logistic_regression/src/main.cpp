@@ -35,8 +35,11 @@ int main(int argc,char* argv[]){
     int root = 0;
     MPI_Bcast(&opt.fea_dim, 1, MPI_INT, root, MPI_COMM_WORLD);
     std::cout<<opt.fea_dim<<std::endl;
+    //std::cout<<"-----"<<std::endl;
     opt.init_theta();
-
+    //pid_t mid;
+    //mid = getpid();
+    //std::cout<<mid<<std::endl;
     std::vector<ThreadParam> params;
     std::vector<pthread_t> threads;
     for(int i = 0; i < opt.n_threads; i++){//construct parameter
@@ -46,6 +49,7 @@ int main(int argc,char* argv[]){
     //multithread start
     for(int i = 0; i < params.size(); i++){
         pthread_t thread_id;
+        std::cout<<thread_id<<std::endl;
         int ret = pthread_create(&thread_id, NULL, &opt_algo, (void*)&(params[i])); 
         if(ret != 0) std::cout<<"process "<<i<<"failed(create thread faild.)"<<std::endl;
         else threads.push_back(thread_id);
