@@ -57,6 +57,8 @@ private:
     float sigmoid(float x);
     void fix_dir(float *w, float *next_w);
 
+    pthread_mutex_t mutex;
+
     std::string line;
     std::vector<std::string> tmp_vec; 
     std::vector<std::string> feature_index;

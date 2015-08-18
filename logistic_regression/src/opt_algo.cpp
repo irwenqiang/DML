@@ -181,7 +181,6 @@ void OPT_ALGO::line_search(float *param_g){
     while(true){
         old_loss_val = loss_function_value(w);//cal loss value per thread
 
-        pthread_mutex_t mutex;
         pthread_mutex_lock(&mutex);
         global_old_loss_val += old_loss_val;//add old loss value of all threads
         pthread_mutex_unlock(&mutex); 
@@ -200,6 +199,7 @@ void OPT_ALGO::line_search(float *param_g){
         pthread_mutex_lock(&mutex);
         global_new_loss_val += new_loss_val;//sum all threads loss value
         pthread_mutex_unlock(&mutex);
+
         if(local_thread_id == main_thread_id){
             MPI_Allreduce(&global_new_loss_val, &all_nodes_new_loss_val, 1, MPI_FLOAT, MPI_SUM, MPI_COMM_WORLD);//sum all nodes loss.
         }
@@ -252,7 +252,6 @@ void OPT_ALGO::parallel_owlqn(int use_list_len, float* ro_list, float** s_list, 
     //should add code update multithread and all nodes sub_g to global_sub_g
     two_loop(use_list_len, local_sub_g, s_list, y_list, ro_list, p);
 
-    pthread_mutex_t mutex;
     pthread_mutex_lock(&mutex);
     for(int j = 0; j < fea_dim; j++){
         *(global_g + j) += *(p + j);//update global direction of all threads
