@@ -207,27 +207,27 @@ void OPT_ALGO::line_search(float *param_g){
 	while(true) {
 		old_loss_val = loss_function_value(w);//cal loss value per thread
 
-		pthread_mutex_t mutex;
-		pthread_mutex_lock(&mutex);
+		globalMutex_.lock();
 		global_old_loss_val += old_loss_val;//add old loss value of all threads
-		pthread_mutex_unlock(&mutex); 
+		globalMutex_.unlock();
 
 		pid_t local_thread_id;
 		local_thread_id = pthread_self();
-		if(local_thread_id == main_thread_id){
+		if(local_thread_id == main_thread_id) {
 			MPI_Allreduce(&global_old_loss_val, &all_nodes_old_loss_val, 1, MPI_FLOAT, MPI_SUM, MPI_COMM_WORLD);
 		}
-		pthread_mutex_lock(&mutex);
-		for(int j = 0; j < fea_dim; j++){
-			*(next_w + j) = *(w + j) + alpha * (*(param_g + j));//local_g equal all nodes g
+		globalMutex_.lock();
+		for(int j = 0; j < fea_dim; j++) {
+			*(next_w + j) = *(w + j) + alpha * (*(param_g + j)); 
+			// local_g equal all nodes g
 		}
-		pthread_mutex_unlock(&mutex);
+		globalMutex_.unlock();
 		fix_dir(w, next_w);//orthant limited
 		new_loss_val = loss_function_value(next_w);//cal new loss per thread
 
-		pthread_mutex_lock(&mutex);
+		globalMutex_.lock();
 		global_new_loss_val += new_loss_val;//sum all threads loss value
-		pthread_mutex_unlock(&mutex);
+		globalMutex_.unlock();
 		if(local_thread_id == main_thread_id){
 			MPI_Allreduce(&global_new_loss_val, &all_nodes_new_loss_val, 1, MPI_FLOAT, MPI_SUM, MPI_COMM_WORLD);//sum all nodes loss.
 		}
@@ -254,14 +254,18 @@ void OPT_ALGO::parallel_owlqn(int use_list_len, float* ro_list, float** s_list, 
 		two_loop(local_sub_g, s_list, y_list, ro_list, p);
 	}//p is every thread search direction
 
-	pthread_mutex_t mutex;
-	pthread_mutex_lock(&mutex);
-	for(int j = 0; j < fea_dim; j++){
-		*(global_g + j) += *(p + j);//update global direction of all threads
+	globalMutex_.lock();
+	for(int j = 0; j < fea_dim; ++j) {
+		*(global_g + j) += *(p + j);  // update global direction of all threads
 	}
-	pthread_mutex_unlock(&mutex);
-	for(int j = 0; j < fea_dim; j++){//must be pay attention
-		*(global_g + j) /= n_threads;
+	globalMutex_.unlock();
+	while (!turn_) {
+		globalMutex_.lock();
+		for(int j = 0; j < fea_dim; ++j) {	// must be pay attention
+			*(global_g + j) /= n_threads;
+		}
+		turn_ = true;
+		globalMutex_.unlock();
 	}
 	pid_t local_thread_id;
 	local_thread_id = pthread_self();
