@@ -58,11 +58,7 @@ private:
     void fix_dir(float *w, float *next_w);
 
     pthread_mutex_t mutex;
-    int sync_global_g;
-    int sync_s_y_list;
-    int sync_global_old_loss;
-    int sync_global_new_loss;
-
+    pthread_barrier_t barrier;
     std::string line;
     std::vector<std::string> tmp_vec; 
     std::vector<std::string> feature_index;
