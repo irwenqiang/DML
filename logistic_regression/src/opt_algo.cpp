@@ -17,24 +17,22 @@ OPT_ALGO::~OPT_ALGO(){
     delete [] global_next_g;
 }
 
-std::vector<std::string> OPT_ALGO::split_line(std::string split_tag){
-    tmp_vec.clear();
+std::vector<std::string> OPT_ALGO::split_line(std::string split_tag, std::vector<std::string>& feature_index){
     int start = 0, end = 0;
     while((end = line.find_first_of(split_tag, start)) != std::string::npos){
         if(end > start){
             index_str = line.substr(start, end - start);
-            tmp_vec.push_back(index_str);
+            feature_index.push_back(index_str);
         }
         start = end + 1;
     }
     if(start < line.size()){
         index_str = line.substr(start);
-        tmp_vec.push_back(index_str);
+        feature_index.push_back(index_str);
     }
-    return tmp_vec;
 }
 
-void OPT_ALGO::get_feature_struct(std::vector<std::string> feature_index){
+void OPT_ALGO::get_feature_struct(){
     for(int i = 1; i < feature_index.size(); i++){//start from index 1
 	int start = 0, end = 0;
 	while((end = feature_index[i].find_first_of(":", start)) != std::string::npos){
@@ -64,11 +62,11 @@ void OPT_ALGO::load_data(std::string data_file, std::string split_tag){
         feature_index.clear();
         key_val.clear();
         //return id:value, .e.g 3:1, 4:1
-        feature_index = split_line(split_tag);
+        split_line(split_tag, feature_index);
         y = atof(feature_index[0].c_str());
         label.push_back(y);
         //3:1 as input
-        get_feature_struct(feature_index);
+        get_feature_struct();
         fea_matrix.push_back(key_val);
     }
     fin.close();
@@ -83,6 +81,7 @@ void OPT_ALGO::init_theta(){
     next_w = new float[fea_dim];
     global_g = new float[fea_dim];
     global_next_g = new float[fea_dim];
+    all_nodes_global_g = new float[fea_dim];
 
     global_old_loss_val = 0.0;
     global_new_loss_val = 0.0;

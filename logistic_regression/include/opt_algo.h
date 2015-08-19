@@ -46,8 +46,8 @@ public:
     pid_t main_thread_id;
 
 private:
-    std::vector<std::string> split_line(std::string split_tag); 
-    void get_feature_struct(std::vector<std::string> feature_index);
+    std::vector<std::string> split_line(std::string split_tag, std::vector<std::string>& feature_index); 
+    void get_feature_struct();
     void parallel_owlqn(int use_list_len, float* ro_list, float** s_list, float** y_list);
     void loss_function_gradient(float *para_w, float *para_g);
     void loss_function_subgradient(float *local_g, float *local_sub_g);
