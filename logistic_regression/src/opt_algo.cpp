@@ -188,7 +188,6 @@ void OPT_ALGO::line_search(float *param_g){
         }
 
         pthread_barrier_wait(&barrier);
-        pthread_barrier_destroy(&barrier);
         for(int j = 0; j < fea_dim; j++){
             *(next_w + j) = *(w + j) + alpha * *(param_g + j);//local_g equal all nodes g
         }
@@ -204,7 +203,6 @@ void OPT_ALGO::line_search(float *param_g){
         }
 
         pthread_barrier_wait(&barrier);
-        pthread_barrier_destroy(&barrier);
         loss_function_gradient(next_w, global_next_g);
 
         if(all_nodes_new_loss_val <= all_nodes_old_loss_val + beta * cblas_ddot(fea_dim, (double*)param_g, 1, (double*)global_next_g, 1)){
@@ -272,7 +270,6 @@ void OPT_ALGO::parallel_owlqn(int use_list_len, float* ro_list, float** s_list, 
         MPI_Allreduce(global_g, all_nodes_global_g, 1, MPI_FLOAT, MPI_SUM, MPI_COMM_WORLD);//all_nodes_global_g store shared sum of every nodes search direction
     }
     pthread_barrier_wait(&barrier);
-    pthread_barrier_destroy(&barrier);
     //should be synchronous all threads
     line_search(all_nodes_global_g);//use global search direction to search
     //update slist
@@ -293,7 +290,6 @@ void OPT_ALGO::parallel_owlqn(int use_list_len, float* ro_list, float** s_list, 
         cblas_dcopy(fea_dim, (double*)next_w, 1, (double*)w, 1);
     }
     pthread_barrier_wait(&barrier);
-    pthread_barrier_destroy(&barrier);    
 }
 
 void OPT_ALGO::owlqn(int proc_id, int n_procs){
