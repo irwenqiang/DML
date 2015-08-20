@@ -313,6 +313,7 @@ void OPT_ALGO::owlqn(int proc_id, int n_procs){
         parallel_owlqn(use_list_len, ro_list, s_list, y_list);        
         step++;
     }
+    pthread_barrier_destory(&barrier);
     //free memory
     delete [] ro_list;
     for(int i = 0; i < m; i++){

@@ -55,6 +55,7 @@ int main(int argc,char* argv[]){
         else threads.push_back(thread_id);
             
     }
+
     for(int i = 0; i < threads.size(); i++){//join threads function
         pthread_join(threads[i], 0); 
     }
